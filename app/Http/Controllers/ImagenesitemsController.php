@@ -245,13 +245,14 @@ class ImagenesitemsController extends Controller
 
         $pagina = $request['pagina'];
         $cantidad = $request['cantidad'];
+        $cantidadItems = $request['cantidadItems'];
 
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '', 'cantidad' => 0 );
 
         $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
         $client = new Client();
 
-        $response = $client->request('GET', $urlDatax['0']->valor . 'get-info-items/' . $pagina . '/' . $cantidad);
+        $response = $client->request('GET', $urlDatax['0']->valor . 'get-info-items/' . $pagina . '/' . $cantidad . '/' . $cantidadItems);
 
         if($response->getStatusCode() == '200') {            
             $content = (string) $response->getBody()->getContents();
