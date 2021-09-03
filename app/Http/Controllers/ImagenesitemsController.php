@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Imagenesitem;
-use App\Palabrasclaveitem;
+//use App\Palabrasclaveitem;
 use App\Configuraciondato;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
@@ -249,7 +249,6 @@ class ImagenesitemsController extends Controller
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '', 'cantidad' => 0 );
 
         $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
-
         $client = new Client();
 
         $response = $client->request('GET', $urlDatax['0']->valor . 'get-info-items/' . $pagina . '/' . $cantidad);
@@ -335,59 +334,19 @@ class ImagenesitemsController extends Controller
     /**
      * Obtiene los productos de datax relacionados por el nombre o el codigo de barras 
      */
-    public function obtenerItemsPorNombreBarCode( $descBarCode ) {
+    public function obtenerItemsDataxGeneral( $descBarCode ) {
         $items = [];
 
         if( !empty( $descBarCode ) ) {
             $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
 
             $client = new Client();
-            $response = $client->request('GET', $urlDatax['0']->valor . 'get-items-by-namebc/' . $descBarCode);
+            $response = $client->request('GET', $urlDatax['0']->valor . 'find-items/' . $descBarCode);
 
             if($response->getStatusCode() == '200') {            
                 $content = (string) $response->getBody()->getContents();
                 $items = json_decode($content);
             }              
-        }
-
-        return $items;
-    }
-
-    /**
-     * Obtiene los codigos de los productos por palabras clave en cotools y 
-     * los obtiene en datax con dichos codigos
-     */
-    public function obtenerItemsPalabraClave($descripcion) {
-        $items = [];
-
-        // Valida que se haya ingresado una descripcion
-        if( !empty( $descripcion ) ) {
-            // se obtienen los productos relacionados a la palabra clave
-            $infoItemsPC = Palabrasclaveitem::obtenerItemsPorPC( $descripcion );
-            
-            // se separan los codigos y se evitan los repetidos para la consulta
-            $arrCods = [];
-            foreach( $infoItemsPC as $val ) {
-                if( empty( $arrCods ) ) {
-                    $arrCods[] = $val['cod_item'];
-                } else if( !in_array( $val['cod_item'], $arrCods ) ) {
-                    $arrCods[] = $val['cod_item'];
-                }
-            }
-
-            // Valida que si existieran productos con la palabra clave
-            if( !empty( $arrCods )) {
-                $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
-
-                $client = new Client();
-                $response = $client->request('GET', $urlDatax['0']->valor . 'get-items-by-cods/' . json_encode($arrCods));
-
-                if($response->getStatusCode() == '200') {            
-                    $content = (string) $response->getBody()->getContents();
-                    $items = json_decode($content);
-                }              
-            }
-
         }
 
         return $items;
@@ -401,24 +360,18 @@ class ImagenesitemsController extends Controller
 
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
-        // se obtienen los codigos de los productos segun la palabra clave
-        $itemsPC = $this->obtenerItemsPalabraClave( $descripcion );
-
         // se obtienen los productos por nombre o codigo de barras
-        $itemsNBC = $this->obtenerItemsPorNombreBarCode( $descripcion ); 
+        $itemsNBC = $this->obtenerItemsDataxGeneral( $descripcion ); 
 
-        // Se concatenan los arreglos resultantes
-        $resultItms = array_merge($itemsPC, $itemsNBC);
-
-        foreach($resultItms as $key => $producto) {
+        foreach($itemsNBC as $key => $producto) {
                     
-            $resultItms[$key]->imagenes = $this->obtenerImagenesProducto($producto->cod_item);
+            $itemsNBC[$key]->imagenes = $this->obtenerImagenesProducto($producto->cod_item);
 
         }
 
-        if( !empty($resultItms) ) {
+        if( !empty($itemsNBC) ) {
             $resp['estado'] = true;
-            $resp['data'] = $resultItms;
+            $resp['data'] = $itemsNBC;
         }
 
         return $resp;    

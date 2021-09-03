@@ -20,7 +20,7 @@ class CategoriasController extends Controller
         try {
 
             // se obtienen las categorias
-            $categorias = Categoria::obtenerCategorias(); 
+            $categorias = Categoria::obtenerCategorias();
             
             // valida si se econtraron registros
             if( !empty( $categorias ) ) {

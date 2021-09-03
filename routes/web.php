@@ -30,7 +30,7 @@ Route::get('check-user-documents', 'App\Http\Controllers\DocumentosUsuariosContr
 // Rutas para los items
 Route::get('get-items', 'App\Http\Controllers\ImagenesitemsController@obtenerItems');
 Route::get('get-item-detail', 'App\Http\Controllers\ImagenesitemsController@obtenerDetallesItem');
-Route::get('get-items-name', 'App\Http\Controllers\ImagenesitemsController@obtenerItemsGeneral');
+Route::get('get-items-general', 'App\Http\Controllers\ImagenesitemsController@obtenerItemsGeneral');
 Route::get('get-items-group', 'App\Http\Controllers\ImagenesitemsController@obtenerItemsPorGrupo');
 
 // Rutas para los pedidos
@@ -51,11 +51,6 @@ Route::get('get-order-details', 'App\Http\Controllers\PedidosdetallesController@
 Route::get('save-order-detail/{pedidoId}/{codItem}/{cant}/{precioVentaU}/{vlrIva}', 'App\Http\Controllers\PedidosdetallesController@guardarDetallePedido');
 Route::get('delete-item', 'App\Http\Controllers\PedidosdetallesController@eliminarItemPedido');
 Route::get('change-cant-item', 'App\Http\Controllers\PedidosdetallesController@cambiarCantidadItem');
-
-// Rutas para palabras clave
-Route::get('save-key-word', 'App\Http\Controllers\PalabrasclaveitemsController@crearPalabraClaveItem');
-Route::get('get-key-word', 'App\Http\Controllers\PalabrasclaveitemsController@obtenerPalabrasClaveItem');
-Route::get('delete-key-word', 'App\Http\Controllers\PalabrasclaveitemsController@eliminarPalabrasClaveItem');
 
 // Rutas para imagenes
 Route::get('save-images', 'App\Http\Controllers\ImagenesitemsController@guardarImagenesItem');
