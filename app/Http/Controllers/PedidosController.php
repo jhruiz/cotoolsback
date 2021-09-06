@@ -63,7 +63,8 @@ class PedidosController extends Controller
         // //se obtienen los email configurados para enviar el correo (destinatarios)
         // $arrMails = explode(",", $correos);
 
-        Mail::to($pedido['0']->email)->send(new Pedidos((object) $pedido));
+        // Mail::to($pedido['0']->email)->send(new Pedidos((object) $pedido));
+        Mail::to('jaiber.ruiz@hotmail.com')->send(new Pedidos((object) $pedido));
         //se envian los correos configurados
         // foreach($arrMails as $m) {
         //     Mail::to($m)->send(new Pedidos((object) $pedido));
