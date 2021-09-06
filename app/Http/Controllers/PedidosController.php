@@ -7,6 +7,8 @@ use App\Usuario;
 use App\Pedidosdetalle;
 use App\Configuraciondato;
 use App\Imagenesitem;
+use App\Mail\Pedidos;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 
@@ -17,18 +19,54 @@ class PedidosController extends Controller
     */
     public function enviarCorreoPedido($userId, $pdWeb) {
 
-        // $pedidos = Pedido::obtenerPedidosCliente($userId); 
-       
-        // //obtiene la información de los usuarios a los que debe enviarle el correo de creacion de tercero
+        $pedido = Pedido::obtenerPedidoWebCliente($userId, $pdWeb); 
+
+        $subTtal = 0;
+        $dcto = 0;
+        $subTtalNeto = 0;
+        $iva = 0;
+        $ttalPagar = 0;
+        
+        // se procesa la información de cada item
+        foreach( $pedido as $key => $val ) {
+            
+            //verifica si tiene el iva incluido para calcularlo
+            if ( $val->vlriva == 1 ) {
+                $pedido[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
+                $pedido[$key]->tasaImp = ( $val->tasaiva/100 ) + 1;
+                $pedido[$key]->vlrBase = number_format($val->precioventaunit / $pedido[$key]->tasaImp, 2, '.', '');
+                $pedido[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $pedido[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                $pedido[$key]->vlrIva = number_format($val->precioventaunit - $pedido[$key]->vlrBase, 2, '.', '');
+            } else {
+                $pedido[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
+                $pedido[$key]->tasaImp = ( $val->tasaiva/100 );
+                $pedido[$key]->vlrIva = number_format($val->precioventaunit * $pedido[$key]->tasaImp, 2, '.', '');
+                $pedido[$key]->vlrBase = number_format($val->precioventaunit, 2, '.', '');
+                $pedido[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $pedido[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+            }
+
+            $subTtal += $pedido[$key]->vlrBase * $val->cantidad;
+            $iva += $pedido[$key]->vlrIva * $val->cantidad;
+        }
+
+        $subTtalNeto = $subTtal - $dcto;  
+        $ttalPagar = number_format($subTtalNeto + $iva, 2, '.', ''); 
+        
+        $pedido->iva = $iva;
+        $pedido->subTtalNeto = $subTtalNeto;
+        $pedido->ttalPagar = $ttalPagar;
+        
+        //obtiene la información de los usuarios a los que debe enviarle el correo de creacion de tercero
         // $nombre = 'infpedido';
         // $correos = Configuraciondato::obtenerConfiguracion($nombre)['0']->valor;
 
         // //se obtienen los email configurados para enviar el correo (destinatarios)
         // $arrMails = explode(",", $correos);
 
-        // //se envian los correos configurados
+        Mail::to($pedido['0']->email)->send(new Pedidos((object) $pedido));
+        //se envian los correos configurados
         // foreach($arrMails as $m) {
-        //     Mail::to($m)->send(new usuarioCreado((object) $data));
+        //     Mail::to($m)->send(new Pedidos((object) $pedido));
         // }
     }    
     

@@ -162,4 +162,18 @@ class Pedido extends Model
 
       return false;        
   }    
+
+    /**
+     * Obtiene un pedido específico de un cliente
+     */
+    public static function obtenerPedidoWebCliente($userId, $pdWeb) {
+      $data = Pedido::select()
+                    ->join('usuarios', 'usuarios.id', '=', 'pedidos.usuario_id')
+                    ->join('pedidosdetalles', 'pedidosdetalles.pedido_id', '=', 'pedidos.id')
+                    ->where('pedidos.usuario_id', '=', $userId)
+                    ->where('pedidos.nro_pdweb', '=', $pdWeb)
+                    ->get();
+
+      return $data;
+    }  
 }

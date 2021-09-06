@@ -1,6 +1,8 @@
 <?php
 
+// Ruta de prueba que envia un correo
 Route::get('enviarcorreo', 'App\Http\Controllers\UsuariosController@enviarCorreo');
+Route::get('enviarcorreopedido/{userId}/{pdweb}', 'App\Http\Controllers\PedidosController@enviarCorreoPedido');
 
 // Rutas para usuarios
 Route::get('get-users', 'App\Http\Controllers\UsuariosController@obtenerUsuarios');
