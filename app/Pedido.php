@@ -15,6 +15,7 @@ class Pedido extends Model
                               'usuarios.email', 'estadospedidos.descripcion')
                 ->join('usuarios', 'usuarios.id', '=', 'pedidos.usuario_id')
                 ->join('estadospedidos', 'estadospedidos.id', '=', 'pedidos.estadospedido_id')
+                ->where('pedidos.nro_pdweb', '<>', null)                
                 ->groupBy(  'pedidos.id', 'pedidos.nro_pdweb', 'pedidos.estadopago', 'pedidos.created',
                             'usuarios.nombre', 'usuarios.identificacion', 'usuarios.email', 'estadospedidos.descripcion')  
                 ->get();
