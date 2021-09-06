@@ -15,7 +15,8 @@ class Pedido extends Model
                               'usuarios.email', 'estadospedidos.descripcion')
                 ->join('usuarios', 'usuarios.id', '=', 'pedidos.usuario_id')
                 ->join('estadospedidos', 'estadospedidos.id', '=', 'pedidos.estadospedido_id')
-                ->groupBy('pedidos.id', 'pedidos.nro_pdweb', 'pedidos.estadopago', 'pedidos.created')  
+                ->groupBy(  'pedidos.id', 'pedidos.nro_pdweb', 'pedidos.estadopago', 'pedidos.created',
+                            'usuarios.nombre', 'usuarios.identificacion')  
                 ->get();
     	return $data;     	
     }
@@ -24,8 +25,7 @@ class Pedido extends Model
      * Obtiene los pedidos realizados por un cliente especifico
      */
     public static function obtenerPedidosCliente($userId) {
-      $data = Pedido::select( 'pedidos.id', 'pedidos.nro_pdweb', 'pedidos.updated_at', 'estadospedidos.descripcion',
-                              'usuarios.nombre', 'usuarios.identificacion')
+      $data = Pedido::select('pedidos.id', 'pedidos.nro_pdweb', 'pedidos.updated_at', 'estadospedidos.descripcion')
                     ->join('estadospedidos', 'estadospedidos.id', '=', 'pedidos.estadospedido_id')
                     ->where('pedidos.usuario_id', '=', $userId)
                     ->where('pedidos.nro_pdweb', '<>', null)
