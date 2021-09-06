@@ -24,7 +24,8 @@ class Pedido extends Model
      * Obtiene los pedidos realizados por un cliente especifico
      */
     public static function obtenerPedidosCliente($userId) {
-      $data = Pedido::select('pedidos.id', 'pedidos.nro_pdweb', 'pedidos.updated_at', 'estadospedidos.descripcion')
+      $data = Pedido::select( 'pedidos.id', 'pedidos.nro_pdweb', 'pedidos.updated_at', 'estadospedidos.descripcion',
+                              'usuarios.nombre', 'usuarios.identificacion')
                     ->join('estadospedidos', 'estadospedidos.id', '=', 'pedidos.estadospedido_id')
                     ->where('pedidos.usuario_id', '=', $userId)
                     ->where('pedidos.nro_pdweb', '<>', null)
