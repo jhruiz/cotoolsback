@@ -29,7 +29,8 @@
         <div class="container-fluid">
 
             <div style="text-align: center">
-                <h4>Detalles del pedido</span></h4>
+                <h3>Su pedido fue procesado exitósamente.</span></h3>
+                <h4>Detalles del pedido.</span></h4>
             </div>
             
             <div>
@@ -79,6 +80,10 @@
                 </table>                
                 <!-- fin seccion para el detalle del pedido -->
             </div>
+
+            <div style="text-align: center">
+                <h3>Para nosotros es importante siempre contar contigo como nuestro socio de negocio.</span></h3>
+            </div>            
 
         </div>
     </body>
