@@ -29,13 +29,13 @@
         <div class="container-fluid">
 
             <div style="text-align: center">
-                <h3>Su pedido fue procesado exitósamente.</span></h3>
+                <h3>Pedido procesado exitósamente.</span></h3>
                 <h4>Detalles del pedido.</span></h4>
             </div>
             
             <div>
-                <h4><span>Número del pedido: {{ $data['0']->nro_pdweb }}</span></h4>
-                <h4><span>Fecha del pedido: {{ $data['0']->created }}</span></h4>
+                <h4><span>Número del pedido: {{ $data->numeroPedido }}</span></h4>
+                <h4><span>Fecha del pedido: {{ $data['0']->fechapedido }}</span></h4>
             </div>
 
             <div>
@@ -53,10 +53,10 @@
                         <tbody>
                             @foreach ($data as $dat)
                                 <tr>
-                                    <td style="text-align: left">{!! $dat->descripcion !!}</td>
+                                    <td style="text-align: left">{!! $dat->desc_item !!}</td>
                                     <td style="text-align: center">{{ $dat->cantidad }}</td>
-                                    <td style="text-align: right">{{ number_format($dat->precioventaunit, 2) }}</td>
-                                    <td style="text-align: center">{{ $dat->tasaiva }} %</td>
+                                    <td style="text-align: right">{{ number_format($dat->vlr_item, 2) }}</td>
+                                    <td style="text-align: center">{{ $dat->vlr_impuesto }} %</td>
                                     <td style="text-align: right">{{ number_format($dat->baseTtal, 2) }}</td>
                                 </tr>
                             @endforeach

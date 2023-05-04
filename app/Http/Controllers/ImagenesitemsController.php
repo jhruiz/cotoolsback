@@ -10,43 +10,6 @@ use GuzzleHttp\Client;
 
 class ImagenesitemsController extends Controller
 {
-    
-    /**
-     * Retorna la información de todas las imagenes de los items registrados en la base de datos
-     */
-    public function obtenerImagenesItem(Request $request)    
-    {
-
-        $itemId = $request['itemId'];
-
-        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
-
-        try {
-
-            if( !empty($itemId) ) {
-
-                // se obtienen las imagenes de los items 
-                $imagenes = Imagenesitem::obtenerImagenesItem( $itemId ); 
-                
-                // valida si se econtraron registros
-                if( !empty( $imagenes ) ) {
-                    $resp['estado'] = true;
-                    $resp['data'] = $imagenes;
-                } else {
-                    $resp['mensaje'] = 'No se encontraron las imágenes del item';
-                }
-
-            } else {
-                $resp['mensaje'] = 'Debe seleccionar un ítem';
-            }
-
-        } catch(Throwable $e) {
-            return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
-        }
-
-        return $resp;
-
-    }
 
     /**
      * Guarda las imagenes para un ítem
@@ -70,11 +33,9 @@ class ImagenesitemsController extends Controller
 
                     $data = array(
                         'url' => $imagen,
-                        'cod_item' => $itemId,
+                        'item_id' => $itemId,
                         'posicion' => $cont,
-                        'estadoitem_id' => 8,
-                        'estado_id' => 5,
-                        'created' => date('Y-m-d H:i:s')
+                        'created_at' => date('Y-m-d H:i:s')
                     );
 
                     // Guarda la informacion de la imagen
@@ -213,75 +174,42 @@ class ImagenesitemsController extends Controller
     /**
      * Obtiene las imagenes relacionadas al item
      */
-    public function obtenerImagenesProducto($cod_item) {
+    public function obtenerImagenesItem(Request $request) {
 
-        if( empty( $cod_item ) ) {
-            return null;
-        } else {
-            $imagenes = Imagenesitem::obtenerImagenesItem( $cod_item ); 
+        $itemId = $request['itemId'];
 
-            $imgArr = [];
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
-            if( !empty( $imagenes['0']->id ) ) {
+        try {
+        
+            if( !empty( $itemId ) ) {
 
-                foreach($imagenes as $key => $img) {
-                    $imgArr[$key]['id'] = $img->id;
-                    $imgArr[$key]['url'] = $img->url;
+                // Se obtienen las imagenes de los items
+                $imagenes = Imagenesitem::obtenerImagenesItem( $itemId ); 
+
+                $imgArr = [];
+
+                if( !empty( $imagenes['0']->id ) ) {
+
+                    foreach($imagenes as $key => $img) {
+                        $imgArr[$key]['id'] = $img->id;
+                        $imgArr[$key]['url'] = $img->url;
+                    }
+
+                    $resp['estado'] = true;
+                    $resp['data'] = $imgArr;
+                } else {
+                    $resp['mensaje'] = 'No fue posible almacenar la información de las imágenes.';
                 }
-
-                return $imgArr;
-            }
-
-            return null;
-        }
-
-    }
-
-    /**
-     * Obtiene los items desde la base de datos de datax
-     * y los recorre para agregar las imágenes
-     */
-    public function obtenerItems(Request $request) {
-
-        $pagina = $request['pagina'];
-        $cantidad = $request['cantidad'];
-        $cantidadItems = $request['cantidadItems'];
-
-        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '', 'cantidad' => 0 );
-
-        $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
-        $client = new Client();
-
-        $response = $client->request('GET', $urlDatax['0']->valor . 'get-info-items/' . $pagina . '/' . $cantidad . '/' . $cantidadItems);
-
-        if($response->getStatusCode() == '200') {            
-            $content = (string) $response->getBody()->getContents();
-            $productos = json_decode($content);
-
-            if(!empty($productos->data)) {
-
-                $nuevoArrProductos = [];
-
-                foreach($productos->data as $key => $producto) {
-                    
-                    $nuevoArrProductos[$key] = $producto;
-                    $nuevoArrProductos[$key]->imagenes = $this->obtenerImagenesProducto($producto->cod_item);
-
-                }
-
-                $resp['mensaje'] = 'Se obtienen los productos de forma correcta.'; 
-                $resp['estado'] = true;
-                $resp['data'] = $nuevoArrProductos;
-                $resp['cantidad'] = $productos->cantidad; 
             } else {
-                $resp['mensaje'] = $productos->mensaje;
+                $resp['mensaje'] = 'Debe seleccionar un producto para para cargar las imágenes.';
             }
-
-        } else {
-            $resp['mensaje'] = 'No fue posible obtener resultados de Datax.';
+        } catch(Throwable $e) {
+            return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
         }
         
-        return $resp;        
+        return $resp;
+
     }
 
     /**
@@ -330,52 +258,6 @@ class ImagenesitemsController extends Controller
         }
         
         return $resp;        
-    }
-
-    /**
-     * Obtiene los productos de datax relacionados por el nombre o el codigo de barras 
-     */
-    public function obtenerItemsDataxGeneral( $descBarCode ) {
-        $items = [];
-
-        if( !empty( $descBarCode ) ) {
-            $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
-
-            $client = new Client();
-            $response = $client->request('GET', $urlDatax['0']->valor . 'find-items/' . $descBarCode);
-
-            if($response->getStatusCode() == '200') {            
-                $content = (string) $response->getBody()->getContents();
-                $items = json_decode($content);
-            }              
-        }
-
-        return $items;
-    }
-
-    /**
-     * Obtiene los items por palabras clave, codigo de barras y nombre del producto
-     */
-    public function obtenerItemsGeneral(Request $request) {
-        $descripcion = $request['descripcion'];
-
-        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
-
-        // se obtienen los productos por nombre o codigo de barras
-        $itemsNBC = $this->obtenerItemsDataxGeneral( $descripcion ); 
-
-        foreach($itemsNBC as $key => $producto) {
-                    
-            $itemsNBC[$key]->imagenes = $this->obtenerImagenesProducto($producto->cod_item);
-
-        }
-
-        if( !empty($itemsNBC) ) {
-            $resp['estado'] = true;
-            $resp['data'] = $itemsNBC;
-        }
-
-        return $resp;    
     }
 
     /**

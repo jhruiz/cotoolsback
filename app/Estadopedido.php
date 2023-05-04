@@ -4,13 +4,13 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Estadospedido extends Model
+class Estadopedido extends Model
 {
     /**
      * Se obtiene la información de todos los estados pedidos configurados en la aplicación
      */
     public static function obtenerEstadosPedido( ) {
-		$data = Estadospedido::select()
+		$data = Estadopedido::select()
                     ->get();
     	return $data;     	
     }

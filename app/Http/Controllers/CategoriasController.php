@@ -54,7 +54,7 @@ class CategoriasController extends Controller
 
                 $data = array(
                     'descripcion' => $descripcion,
-                    'created' => date('Y-m-d H:i:s')
+                    'created_at' => date('Y-m-d H:i:s')
                 );
 
                 // Crea la categoria

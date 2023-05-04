@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Usuario;
-use App\PerfilesUsuario;
 use App\Configuraciondato;
+
+use App\Usuario;
+use App\Tipopersona;
+use App\Tipodocumento;
+use App\Regimene;
+use App\Perfile;
+use App\PerfilesUsuario;
+use App\Ciudade;
 use App\Mail\usuarioCreado;
 use App\Mail\usuarioActivado;
 use Illuminate\Support\Facades\Mail;
@@ -16,8 +22,9 @@ class UsuariosController extends Controller
 {
 
     public function enviarCorreo() {
-        $email = 'jaiber.ruiz@hotmail.com';
-        Mail::to($email)->send(new usuarioActivado);
+        $email = 'jaiber.ruiz@miggo.com.co';
+        $resp = Mail::to($email)->send(new usuarioActivado);
+        dd('Success! Email has been sent successfully.');
     }
 
     /**
@@ -116,32 +123,70 @@ class UsuariosController extends Controller
     /**
      * Crea un usuario en estado pendiente por verificar
      */
-    public function crearUsuario(Request $request) {
-        
-        $nombre = $request['nombre'];
-        $identificacion = $request['identificacion'];
-        $email = $request['email'];        
-        $perfiles = $request['perfiles'];
+    public function crearUsuario(Request $request) 
+    {
+
+        $nit = $request['identificacion'];
+        $email = $request['email'];
+        $ciudad = $request['ciudad'];
+        $direccion = $request['direccion'];        
+        $celular = $request['celular'];
+        $telefono = !empty($request['telefono']) ? $request['telefono'] : '';
+        $tipoPersona = !empty($request['tipoPersona']) ? $request['tipoPersona'] : '1';
+        $perfiles = !empty($request['perfiles']) ? $request['perfiles'] : null;
 
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
         try {
 
-            if( !empty( $nombre ) && !empty( $identificacion ) && !empty( $email ) ) {
+            if( !empty( $nit ) && !empty( $email ) && !empty( $ciudad ) && !empty( $direccion ) && !empty( $celular ) ) 
+            {
 
                 // Verifica si el usuario ya existe en la base de datos por medio de su correo
                 if( !$this->verificarUsuarioExiste( $email ) ) {
 
-                    $contrasenia = $this->generarContrasenia( $identificacion );
+                    // Obtiene el nombre o la razon social del cliente
+                    $nombres = $this->obtenerNombresCliente($tipoPersona, trim($request['nombres']), trim($request['apellidos']), trim($request['razonSocial']));
+
+                    // Se obtiene el id del regimen
+                    $regimen = isset($request['regimen']) ? $request['regimen'] : 'IV';
+                    $regimenId = Regimene::obtenerRegimenPorCodigo( $regimen )['0']->id;
+
+                    // Se obtiene el id del tipo de documento
+                    $tipoDoc = isset($request['tipoDocumento']) ? $request['tipoDocumento'] : 'C';
+                    $tipoDocId = Tipodocumento::obtenerTipodocumentoPorCodigo( $tipoDoc )['0']->id;
+
+                    // Se obtiene el vendedor
+                    $vendedor = isset($request['vendedor']) ? $request['vendedor'] : '114048654';
+                    $vendedorId = Usuario::obtenerUsuarioPorIdent( $vendedor )['0']->id;
+
+                    // Se genera y obtiene la contraseña
+                    $contrasenia = $this->generarContrasenia( $nit );
 
                     if( !empty( $contrasenia ) ){
                         
                         $data = array(
-                            'nombre' => $nombre,
-                            'identificacion' => $identificacion,
+                            'tipoPersona' => $tipoPersona,
+                            'regimen' => $regimenId,
+                            'nit' => $nit,
+                            'tipodocumento_id' => $tipoDocId,
+                            'digitoverificacion' => isset($request['digVerificacion']) ? $request['digVerificacion'] : '',
+                            'razon_social' => $nombres['razon_social'],
+                            'primer_apellido' => $nombres['primer_apellido'],
+                            'segundo_apellido' => $nombres['segundo_apellido'],
+                            'primer_nombre' => $nombres['primer_nombre'],
+                            'segundo_nombre' => $nombres['segundo_nombre'],
                             'email' => $email,
-                            'contrasenia' => $contrasenia,
-                            'created' => date('Y-m-d H:i:s')
+                            'password' => $contrasenia,
+                            'ciudade_id' => $ciudad,
+                            'direccion' => $direccion,
+                            'telefono' => $telefono,
+                            'celular' => $celular,
+                            'nombreContacto' => !empty($request['nombreContacto']) ? $request['nombreContacto'] : '',
+                            'usuario_id' => $vendedorId,
+                            'listaprecio' => !empty($request['listaPrecios']) ? $request['listaPrecios'] : '1',
+                            'estado_id' => '2',
+                            'created_at' => date('Y-m-d H:i:s')
                         );
 
                         // Crea el usuario
@@ -149,15 +194,13 @@ class UsuariosController extends Controller
 
                         if( $id ) {
 
-                            // Si el arreglo de perfiles es diferente de vacio, crea la relacion perfil y usuario
-                            if(!empty($perfiles)){
-                                foreach($perfiles as $key => $val) {
-                                    PerfilesUsuario::crearPerfilUsuario($val, $id, $data['created']);
-                                }
-                            }
+                            // Si el arreglo de perfiles es diferente de vacio, crea la relacion perfil y usuario                            
+                            PerfilesUsuario::crearPerfilUsuario($perfiles['0'], $id, $data['created_at']);
 
-                            // Envía correo de creación de cliente
+                            // Se envía correo por la creación del cliente
                             $this->enviarCorreoCreacion($data);
+
+                            $this->enviarCorreoActivacion($email);
 
                             $resp['estado'] = true;
                             $resp['data'] = $id;                            
@@ -170,7 +213,128 @@ class UsuariosController extends Controller
                     }
 
                 } else {
-                    $resp['mensaje'] = 'El usuario ' . $nombre . ' ya se encuentra registrado en nuestra base de datos';
+                    $resp['mensaje'] = 'El usuario ' . $email . ' ya se encuentra registrado en nuestra base de datos';
+                }
+
+            } else {
+                $resp['mensaje'] = 'La información para creación del usuario no se encuentra completa.';
+            }
+
+        } catch(Throwable $e) {
+            return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
+        }
+
+        return $resp;
+    }
+
+    /**
+     * Crea un usuario en estado pendiente por verificar
+     */
+    public function crearUsuarioSinc(Request $request) 
+    {
+        $nit = $request['identificacion'];
+        $email = $request['email'];
+        $ciudad = $request['ciudad'];
+        $direccion = $request['direccion'];        
+        $celular = $request['celular'];
+
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
+
+        try {
+
+            if( !empty( $nit ) && !empty( $email ) && !empty( $ciudad ) && !empty( $direccion ) && !empty( $celular ) ) 
+            {
+
+                // Verifica si el usuario ya existe en la base de datos por medio de su correo
+                if( !$this->verificarUsuarioExiste( $email ) ) {
+
+                    // Obtiene el nombre o la razon social del cliente
+                    // $nombres = [];
+                    // if( isset( $request['tipoPersona'] ) ) {
+                    //     $nombres = $this->obtenerNombresCliente($request['tipoPersona'], $request['nombres'], $request['apellidos'], $request['razonSocial']);
+                    // } else {
+                    //     $nombres['razon_social'] = !empty($request['razonSocial']) ? $request['razonSocial'] : '',
+                    //     $nombres['primer_apellido'] = !empty($request['primerApellido'] ? $request['primerApellido'] : ''),
+                    //     $nombres['segundo_apellido'] = !empty($request['segundoApellido']) ? $request['segundoApellido'] : '',
+                    //     $nombres['primer_nombre'] = !empty($request['primerNombre']) ? $request['primerNombre'] : '',
+                    //     $nombres['segundo_nombre'] = !empty($request['segundoNombre']) ? $request['segundoNombre'] : '',                        
+                    // }
+
+                    // Se obtiene el id del tipo de persona
+                    $tipoPersona = !empty($request['tipoPersona']) ? $request['tipoPersona'] : 'N';
+                    $tipoPerId = Tipopersona::obtenerTipoPersonaPorCodigo( $tipoPersona )['0']->id;
+
+                    // Se obtiene el id del regimen
+                    $regimen = !empty($request['regimen']) ? $request['regimen'] : '2';
+                    $regimenId = Regimene::obtenerRegimenPorCodigo( $regimen )['0']->id;
+
+                    // Se obtiene el id del tipo de documento
+                    $tipoDoc = !empty($request['tipoDocumento']) ? $request['tipoDocumento'] : 'C';
+                    $tipoDocId = Tipodocumento::obtenerTipodocumentoPorCodigo( $tipoDoc )['0']->id;
+
+                    // Se obtiene el id de la ciudad
+                    $ciudadId = Ciudade::obtenerCiudadPorDesc( $ciudad )['0']->id;
+
+                    // Se obtiene el vendedor
+                    $vendedor = !empty($request['vendedor']) ? $request['vendedor'] : '';
+                    $vendedorId = Usuario::obtenerUsuarioPorIdent( $vendedor );
+
+                    // Se genera y obtiene la contraseña
+                    $contrasenia = $this->generarContrasenia( $nit );
+
+                    if( !empty( $contrasenia ) ){
+                        
+                        $data = array(
+                            'tipoPersona' => $tipoPerId,
+                            'regimen' => $regimenId,
+                            'nit' => $nit,
+                            'tipodocumento_id' => $tipoDocId,
+                            'digitoverficacion' => !empty($request['digVerificacion']) ? $request['digVerificacion'] : '',
+                            'razon_social' => !empty($request['razonSocial']) ? $request['razonSocial'] : '',
+                            'primer_apellido' => !empty($request['primerApellido'] ? $request['primerApellido'] : ''),
+                            'segundo_apellido' => !empty($request['segundoApellido']) ? $request['segundoApellido'] : '',
+                            'primer_nombre' => !empty($request['primerNombre']) ? $request['primerNombre'] : '',
+                            'segundo_nombre' => !empty($request['segundoNombre']) ? $request['segundoNombre'] : '',
+                            'email' => $email,
+                            'password' => $contrasenia,
+                            'ciudade_id' => $ciudadId,
+                            'direccion' => $direccion,
+                            'telefono' => !empty($request['telefono']) ? $request['telefono'] : '',
+                            'celular' => $celular,
+                            'nombreContacto' => !empty($request['nombreContacto']) ? $request['nombreContacto'] : '',
+                            'usuario_id' => $vendedorId,
+                            'listaprecio' => !empty($request['listaPrecios']) ? $request['listaPrecios'] : '',
+                            'estado_id' => '2',
+                            'created_at' => date('Y-m-d H:i:s')
+                        );
+
+                        // Crea el usuario
+                        $id = Usuario::crearUsuario( $data );
+
+                        if( $id ) {
+
+                            // Se obtienen los perfiles creados
+                            $perfiles = Perfile::obtenerPerfiles();
+
+                            // Si el arreglo de perfiles es diferente de vacio, crea la relacion perfil y usuario                            
+                            if(!empty($perfiles)){
+                                foreach($perfiles as $key => $val) {
+                                    PerfilesUsuario::crearPerfilUsuario($key, $id, $data['created_at']);
+                                }
+                            }
+
+                            $resp['estado'] = true;
+                            $resp['data'] = $id;                            
+                        } else {
+                            $resp['mensaje'] = 'No fue posible crear al usuario';
+                        }
+
+                    } else {
+                        $resp['mensaje'] = 'No fue posible codificar la contraseña';
+                    }
+
+                } else {
+                    $resp['mensaje'] = 'El usuario ' . $email . ' ya se encuentra registrado en nuestra base de datos';
                 }
 
             } else {
@@ -242,7 +406,7 @@ class UsuariosController extends Controller
         $usuarioId = $request['id'];
         $estadoId = $request['estado'];
         $perfiles = $request['perfiles'];
-        $email = $request['email'];
+        $email = 'jaiber.ruiz@hotmail.com'; //$request['email'];     
 
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
@@ -251,11 +415,12 @@ class UsuariosController extends Controller
             // Verifica que se ingresara el id del usuario
             if( !empty( $usuarioId ) && !empty($estadoId) ){
 
-                // Elimina los perfiles relacionados al usuario
-                PerfilesUsuario::eliminarPerfilesUsuario( $usuarioId );
-
                 // Registra los nuevos perfiles para el usuario
                 if( !empty( $perfiles ) ) {
+
+                    // Elimina los perfiles relacionados al usuario
+                    PerfilesUsuario::eliminarPerfilesUsuario( $usuarioId );                    
+
                     foreach( $perfiles as $key => $val ) {
                         $created = date('Y-m-d H:i:s');
                         PerfilesUsuario::crearPerfilUsuario($val, $usuarioId, $created);
@@ -292,39 +457,6 @@ class UsuariosController extends Controller
     }
 
     /**
-     * Obtiene la información del tercero desde datax
-     */
-    public function obtenerDatosTerceroDatax($identificacion, $email) {
-
-        // se crea un cliente guzzle para obtener por api la información de los clientes de datax
-        try{
-            $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
-
-            $client = new Client();
-            $response = $client->request('GET', $urlDatax['0']->valor . 'get-client/' . $identificacion . '/' . $email);
-            
-            if($response->getStatusCode() == '200') {
-                $content = (string) $response->getBody()->getContents();
-                $usuarios = json_decode($content);
-                
-                if( !empty( $usuarios->data ) ) {
-                    $infoClient = $usuarios->data;
-                } else {
-                    $infoClient = null;
-                }
-                
-            } else {
-                $infoClient = null;
-            }
-    
-            return $infoClient;
-        }catch(Throwable $e) {
-            return null;
-        }
-
-    }
-
-    /**
      * Realiza el login del usuario
      */
     public function loginUsuario(Request $request) {
@@ -339,15 +471,19 @@ class UsuariosController extends Controller
             if( !empty($usuarioId) && !empty($contrasenia) ) {
 
                 // Se obtiene la información del usuario
-                $usuario = Usuario::obtenerUsuarioPorUsername( $usuarioId );
+                $usuario = Usuario::obtenerUsuarioPorEmail( $usuarioId );
 
                 // Verifica si el usuario existe
                 if( !empty($usuario['0']->id) ) {
+
+                    // Se obtiene la ciudad donde vive el usuario
+                    $ciudad = Ciudade::obtenerCiudadPorId( $usuario['0']->ciudade_id );                    
 
                     // Verifica si las contraseñas son iguales
                     if( password_verify($contrasenia, $usuario['0']->password) ) {
                         $resp['estado'] = true;
                         $resp['data'] = $usuario;
+                        $resp['datac'] = $ciudad;
 
                         // Setea la posición password del array del usuario
                         $usuario['0']->password = '';
@@ -355,8 +491,6 @@ class UsuariosController extends Controller
                         // Se agrega la variable user a la sesion
                         $request->session()->put('user', $usuario['0']);
                         
-                        // Obtiene la información del tercero registrado en datax
-                        $resp['dataDatax'] = $this->obtenerDatosTerceroDatax($usuario['0']->identificacion, $usuario['0']->email);
                     } else {
                         $resp['mensaje'] = 'El usuario y/o la contraseña no son correctos';
                     }
@@ -374,91 +508,45 @@ class UsuariosController extends Controller
         }
 
         return $resp;
-
     }
 
     /**
-     * Obtiene los usuarios registrados en la base de datos de Datax
+     * 
      */
-    public function obtenerUsuariosDatax() {    
+    public function obtenerNombresCliente($tipoPersona, $nombres, $apellidos, $razonSocial) {
+        $arrNombresFinal = array(
+            'primer_nombre' => '',
+            'segundo_nombre' => '',
+            'primer_apellido' => '',
+            'segundo_apellido' => '',
+            'razon_social' => '',
+        );
 
-        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
-        
-        $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
+        // Valida si el tipo de persona es natura(1) o persona juridica(2)
+        if( $tipoPersona == '1' ){
 
-        $client = new Client(); 
-
-        $response = $client->request('GET', $urlDatax['0']->valor . 'get-clients');
-        
-        if($response->getStatusCode() == '200') {
-            $content = (string) $response->getBody()->getContents();
-            $usuarios = json_decode($content); 
-
-            if($this->sincronizarUsuarios( $usuarios->data )) {
-                $resp['estado'] = true;                
+            // Valida si el cliente ingresó dos nombres
+            if( strpos( $nombres, ' ') ) {
+                $arrNombres = explode(' ', $nombres);
+                $arrNombresFinal['primer_nombre'] = $arrNombres['0'];
+                $arrNombresFinal['segundo_nombre'] = $arrNombres['1'];
             } else {
-                $resp['mensaje'] = 'No fue posible realizar la sincronización de los usuarios.';
+                $arrNombresFinal['primer_nombre'] = $nombres;
             }
-            
+
+            // Valida si el cliente ingresó dos apellidos
+            if( strpos( $apellidos, ' ') ) {
+                $arrApellidos = explode(' ', $apellidos);
+                $arrNombresFinal['primer_apellido'] = $arrApellidos['0'];
+                $arrNombresFinal['segundo_apellido'] = $arrApellidos['1'];
+            } else {
+                $arrNombresFinal['primer_apellido'] = $apellidos;
+            }
+
         } else {
-            $resp['mensaje'] = 'No fue posible obtener resultados de Datax.';
+            $arrNombresFinal['razon_social'] = $razonSocial;
         }
-        
-        return $resp;
-    }
-
-    /**
-     * Sincroniza los usuarios obtenidos de datax en la bd de configuracion y control de cotools
-     */
-    public function sincronizarUsuarios($usuarios) {
-
-        if(!empty($usuarios)) {
-
-            foreach($usuarios as $usuario) {
-
-                $resp = true;
-                
-                // Si no tiene email, el usuario no será sincronizado
-                if(empty($usuario->email_benf) || empty($usuario->nit_benf) || empty($usuario->nom_benf)) { 
-                    $resp = false;
-                    continue; 
-                }
-    
-                try {
-    
-                    // Verifica si el usuario ya existe en la base de datos por medio de su correo
-                    if( !$this->verificarUsuarioExiste( $usuario->email_benf ) ) {
-    
-                        $contrasenia = $this->generarContrasenia( $usuario->nit_benf );
-                            
-                        $data = array(
-                            'nombre' => $usuario->nom_benf,
-                            'identificacion' => $usuario->nit_benf,
-                            'email' => $usuario->email_benf,
-                            'contrasenia' => $contrasenia,
-                            'created' => date('Y-m-d H:i:s')
-                        );
-    
-                        // Sincroniza el usuario
-                        $usuarioId = Usuario::sincronizarUsuario( $data );
-
-                        if(!empty($usuarioId)) { 
-                            PerfilesUsuario::crearPerfilUsuario(4, $usuarioId, $data['created']);
-                        }else {
-                            $resp = false;
-                        }
-    
-                    }
-        
-                } catch(Throwable $e) {
-                    return false;
-                }
-            }
-
-            return $resp;
-        }     
-        
-        return false;
+        return $arrNombresFinal;
     }
 
 }

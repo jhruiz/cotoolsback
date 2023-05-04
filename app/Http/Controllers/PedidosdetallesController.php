@@ -39,19 +39,19 @@ class PedidosdetallesController extends Controller
                     foreach( $items as $key => $val ) {
                         
                         //verifica si tiene el iva incluido para calcularlo
-                        if ( $val->vlriva == 1 ) {
-                            $items[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
-                            $items[$key]->tasaImp = ( $val->tasaiva/100 ) + 1;
-                            $items[$key]->vlrBase = number_format($val->precioventaunit / $items[$key]->tasaImp, 2, '.', '');
-                            $items[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
-                            $items[$key]->vlrIva = number_format($val->precioventaunit - $items[$key]->vlrBase, 2, '.', '');
+                        if ( $val->impto_incluido == 1 ) {
+                            $items[$key]->baseTtal = $val->vlr_item * $val->cantidad;
+                            $items[$key]->tasaImp = ( $val->vlr_impuesto/100 ) + 1;
+                            $items[$key]->vlrBase = number_format($val->vlr_item / $items[$key]->tasaImp, 2, '.', '');
+                            $items[$key]->vlrBaseTtal = number_format(($val->vlr_item / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                            $items[$key]->vlrIva = number_format($val->vlr_item - $items[$key]->vlrBase, 2, '.', '');
                         } else {
-                            $items[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
-                            $items[$key]->tasaImp = ( $val->tasaiva/100 );
-                            $items[$key]->vlrIva = number_format($val->precioventaunit * $items[$key]->tasaImp, 2, '.', '');
-                            $items[$key]->vlrBase = number_format($val->precioventaunit, 2, '.', '');
-                            $items[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
-                        }
+                            $items[$key]->baseTtal = $val->vlr_item * $val->cantidad;
+                            $items[$key]->tasaImp = ( $val->vlr_impuesto/100 ) + 1;                            
+                            $items[$key]->vlrBase = number_format($val->vlr_item, 2, '.', '');
+                            $items[$key]->vlrBaseTtal = number_format(($val->vlr_item / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                            $items[$key]->vlrIv = number_format($val->vlr_item * $val->vlr_item, 2, '.', '');
+                        }                    
     
                         $subTtal += $items[$key]->vlrBase * $val->cantidad;
                         $iva += $items[$key]->vlrIva * $val->cantidad;
@@ -107,7 +107,7 @@ class PedidosdetallesController extends Controller
                     'cantidad' => $cant,
                     'precioventaunit' => $precioVentaU,
                     'vlriva' => $vlrIva,
-                    'created' => date('Y-m-d H:i:s')
+                    'created_at' => date('Y-m-d H:i:s')
                 );
 
                 // Guarda la informacion del detalle del pedido

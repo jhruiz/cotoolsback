@@ -31,7 +31,7 @@ class Categoria extends Model
     public static function crearCategoria( $data ) {
         $id = Categoria::insertGetId([
             'descripcion' => $data['descripcion'],
-            'created' => $data['created']
+            'created_at' => $data['created_at']
           ]);	 
           
         return $id;  

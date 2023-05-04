@@ -9,9 +9,9 @@ class Imagenesitem extends Model
     /**
      * Se obtienen las imágenes de un ítem
      */
-    public static function obtenerImagenesItem( $codigoItem ) {
+    public static function obtenerImagenesItem( $itemId ) {
 		  $data = Imagenesitem::select()
-                ->where('cod_item', $codigoItem)
+                ->where('item_id', $itemId)
                 ->get();
     	return $data;      	
     }
@@ -23,11 +23,9 @@ class Imagenesitem extends Model
 
       $id = Imagenesitem::insertGetId([
           'url' => $data['url'],
-          'cod_item' => $data['cod_item'],
+          'item_id' => $data['item_id'],
           'posicion' => $data['posicion'],
-          'estadoitem_id' => $data['estadoitem_id'],
-          'estado_id' => $data['estado_id'],
-          'created' => $data['created']
+          'created_at' => $data['created_at']
         ]);	
         
       return $id; 
@@ -90,9 +88,9 @@ class Imagenesitem extends Model
   /**
    * Obtiene una imagen para un item específico
    */
-  public static function obtenerImagenItem($item) {
+  public static function obtenerImagenItem($itemId) {
     $data = Imagenesitem::select()
-          ->where('cod_item', $item)
+          ->where('item_id', $itemId)
           ->take(1)
           ->get();
     return $data;   

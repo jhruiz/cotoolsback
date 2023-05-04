@@ -7,6 +7,10 @@ use App\Usuario;
 use App\Pedidosdetalle;
 use App\Configuraciondato;
 use App\Imagenesitem;
+use App\Item;
+use App\Impuesto;
+use App\Listaprecio;
+use App\Saldo;
 use App\Mail\Pedidos;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
@@ -17,9 +21,12 @@ class PedidosController extends Controller
     /*
     * Envia correo de creación de cliente
     */
-    public function enviarCorreoPedido($userId, $pdWeb) {
+    public function enviarCorreoPedido($userId, $pedidoId) {
 
-        $pedido = Pedido::obtenerPedidoWebCliente($userId, $pdWeb); 
+        $items = Pedidosdetalle::obtenerDetallesPedido( $pedidoId );
+        
+        // se genera el número del pdido
+        $numeroPedido = $this->obtenerNumeroPedido($items);
 
         $subTtal = 0;
         $dcto = 0;
@@ -28,47 +35,46 @@ class PedidosController extends Controller
         $ttalPagar = 0;
         
         // se procesa la información de cada item
-        foreach( $pedido as $key => $val ) {
+        foreach( $items as $key => $val ) {
             
             //verifica si tiene el iva incluido para calcularlo
-            if ( $val->vlriva == 1 ) {
-                $pedido[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
-                $pedido[$key]->tasaImp = ( $val->tasaiva/100 ) + 1;
-                $pedido[$key]->vlrBase = number_format($val->precioventaunit / $pedido[$key]->tasaImp, 2, '.', '');
-                $pedido[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $pedido[$key]->tasaImp) * $val->cantidad, 2, '.', '');
-                $pedido[$key]->vlrIva = number_format($val->precioventaunit - $pedido[$key]->vlrBase, 2, '.', '');
+            if ( $val->impto_incluido == 1 ) {
+                $items[$key]->baseTtal = $val->vlr_item * $val->cantidad;
+                $items[$key]->tasaImp = ( $val->vlr_impuesto/100 ) + 1;
+                $items[$key]->vlrBase = number_format($val->vlr_item / $items[$key]->tasaImp, 2, '.', '');
+                $items[$key]->vlrBaseTtal = number_format(($val->vlr_item / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                $items[$key]->vlrIva = number_format($val->vlr_item - $items[$key]->vlrBase, 2, '.', '');
             } else {
-                $pedido[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
-                $pedido[$key]->tasaImp = ( $val->tasaiva/100 );
-                $pedido[$key]->vlrIva = number_format($val->precioventaunit * $pedido[$key]->tasaImp, 2, '.', '');
-                $pedido[$key]->vlrBase = number_format($val->precioventaunit, 2, '.', '');
-                $pedido[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $pedido[$key]->tasaImp) * $val->cantidad, 2, '.', '');
-            }
+                $items[$key]->baseTtal = $val->vlr_item * $val->cantidad;
+                $items[$key]->tasaImp = ( $val->vlr_impuesto/100 ) + 1;                            
+                $items[$key]->vlrBase = number_format($val->vlr_item, 2, '.', '');
+                $items[$key]->vlrBaseTtal = number_format(($val->vlr_item / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                $items[$key]->vlrIv = number_format($val->vlr_item * $val->vlr_item, 2, '.', '');
+            }                    
 
-            $subTtal += $pedido[$key]->vlrBase * $val->cantidad;
-            $iva += $pedido[$key]->vlrIva * $val->cantidad;
+            $subTtal += $items[$key]->vlrBase * $val->cantidad;
+            $iva += $items[$key]->vlrIva * $val->cantidad;
         }
+    
+        $items->iva = $iva;
+        $items->subTtalNeto = $subTtal - $dcto;  
+        $items->ttalPagar = number_format($items->subTtalNeto + $iva, 2, '.', ''); 
+        $items->numeroPedido = $numeroPedido; 
 
-        $subTtalNeto = $subTtal - $dcto;  
-        $ttalPagar = number_format($subTtalNeto + $iva, 2, '.', ''); 
-        
-        $pedido->iva = $iva;
-        $pedido->subTtalNeto = $subTtalNeto;
-        $pedido->ttalPagar = $ttalPagar;
-        
         //obtiene la información de los usuarios a los que debe enviarle el correo de creacion de tercero
-        // $nombre = 'infpedido';
-        // $correos = Configuraciondato::obtenerConfiguracion($nombre)['0']->valor;
+        $nombre = 'infpedido';
+        $correos = Configuraciondato::obtenerConfiguracion($nombre)['0']->valor;
 
         // //se obtienen los email configurados para enviar el correo (destinatarios)
-        // $arrMails = explode(",", $correos);
+        $arrMails = explode(",", $correos);
 
         // Mail::to($pedido['0']->email)->send(new Pedidos((object) $pedido));
-        Mail::to('jaiber.ruiz@hotmail.com')->send(new Pedidos((object) $pedido));
+        Mail::to('jaiber.ruiz@hotmail.com')->send(new Pedidos((object) $items));
         //se envian los correos configurados
-        // foreach($arrMails as $m) {
-        //     Mail::to($m)->send(new Pedidos((object) $pedido));
-        // }
+        foreach($arrMails as $m) {
+            sleep(2);
+            Mail::to($m)->send(new Pedidos((object) $items));
+        }
     }    
     
     /**
@@ -80,22 +86,22 @@ class PedidosController extends Controller
 
         try {
 
-            // se obtienen los pedidos
-            $pedidos = Pedido::obtenerPedidos(); 
-            
-            // valida si se econtraron registros
-            if( !empty( $pedidos ) ) {
+            // Obtiene los pedidos registrados
+            $result = Pedido::obtenerPedidos();
+
+            // valida si se obtuvo el registro de los pedidos
+            if( $result['0']->id ) {
                 $resp['estado'] = true;
-                $resp['data'] = $pedidos;
+                $resp['data'] = $result;
             } else {
-                $resp['mensaje'] = 'No se encontraron los pedidos';
+                $mensaje = 'No fue posible obtener los pedidos.';
             }
 
         } catch(Throwable $e) {
             return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
         }
 
-        return $resp;
+        return $resp; 
 
     }
 
@@ -131,35 +137,22 @@ class PedidosController extends Controller
      * Obtiene el precio del producto basado en las listas de precios
      * que pertenecen al cliente en datax
      */
-    public function obtenerPrecioLista($codBenf, $codItem) {
+    public function obtenerPrecioLista($listaPrecio, $itemId) {
 
-        $resp = null;
+        $precio = null;
         try {
-            $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
-    
-            // obtiene el precio configurado para el cliente desde datax
-            $client = new Client();
-            $response = $client->request('GET', $urlDatax['0']->valor . 'get-item-price/' . $codBenf . '/' . $codItem);
+            // obtiene la lista de precios de un producto
+            $listaPrc = Listaprecio::obtenerListaprecios( $itemId );
             
-            // verifica que la respuesta sea correcta
-            if($response->getStatusCode() == '200') {
-                $content = (string) $response->getBody()->getContents();
-                $resp = json_decode($content);
-
-                if( !empty( $resp ) ) {
-                    return (array)$resp;
-                } else {
-                    return null;
-                }
-                
-            } else {
-                return null;
-            }             
+            // obtiene el precio del producto
+            $numLista = 'precio' . $listaPrecio;
+            $precio = $listaPrc['0']->$numLista;
+            
         } catch(Throwable $e) {
             return null;
         }
 
-        return $resp;
+        return $precio;
         
     }
 
@@ -179,21 +172,32 @@ class PedidosController extends Controller
         try {
 
             // valida que se hayan enviado los datos del codigo de usuario, el usuario y el número del pedido
-            if(!empty($codItem) && !empty($cantItem) && !empty($codBenf) && !empty($usuarioId)) {              
+            if(!empty($codItem) && !empty($cantItem) && !empty($usuarioId)) {              
 
                 // se verifica si hay un pedido abierto para el cliente
                 $pedido = Pedido::obtenerPedidoPorUsuario( $usuarioId );
                 $regId = '';
 
+                // se obtiene la información del usuario
+                $userInfo = Usuario::obtenerUsuarioPorId( $usuarioId );
+                
                 // valida si ya existe un pedido para el usuario, sino, lo crea
                 if ( !empty( $pedido['0']->id ) ) {
                     $regId = $pedido['0']->id;
                 } else {
+
                     $data = array(
-                        'cod_benf' => $codBenf,
-                        'estadopago' => '0',
+                        'fechapedido' => date('Y-m-d H:i:s'),
                         'usuario_id' => $usuarioId,
-                        'created' => date('Y-m-d H:i:s')
+                        'vendedor_id' => $userInfo['0']->usuario_id,
+                        'detalle' => 'Venta cotools web',
+                        'tipopago_id' => '2',
+                        'diascredito' => '30',
+                        'listaprecio_id' => $userInfo['0']->listaprecio,
+                        'sincronizado' => '0',
+                        'estadopedido_id' => '1',
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'carrito' => '1'
                     );
     
                     // Guarda la informacion del pedido
@@ -203,25 +207,29 @@ class PedidosController extends Controller
                 // si se obtiene el id del pedido, guarda el detalle del mismo
                 if( !empty( $regId ) ) {
 
+                    // se obtiene información del item por código
+                    $itemInfo = Item::obtenerItemPorCodigo( $codItem );
+
                     // valida si el producto ya ha sido cargado previamente para ese usuario                 
-                    $respDet = Pedidosdetalle::validarActualizarPedido($regId, $codItem, $cantItem);
+                    $respDet = Pedidosdetalle::validarActualizarPedido($regId, $itemInfo['0']->id, $cantItem);
 
                     // valida si se actualizó el registro del producto para el pedido
                     if( empty($respDet['0']->id ) ){
 
                         // obtiene el precio del item basado en el precio de la lista del usuario
-                        $precioLista = $this->obtenerPrecioLista($codBenf, $codItem);
+                        $precioLista = $this->obtenerPrecioLista($userInfo['0']->listaprecio, $itemInfo['0']->id);
+
+                        // se obtiene el impuesto asociado al producto
+                        $iptoItem = Impuesto::obtenerImpuestoId( $itemInfo['0']->impuesto_id );                        
 
                         $dataDet = array(
                             'pedido_id' => $regId,
-                            'codigo_item' => $codItem,
-                            'desc' => $descItem,
-                            'cantidad'  => $cantItem,
-                            'precioventaunit' => $precioLista['precio'],  
-                            'estado' => '1',                          
-                            'vlriva' => $precioLista['ivaInc'],
-                            'tasaiva' => $precioLista['tasaIva'],
-                            'created' => date('Y-m-d H:i:s')
+                            'fecha_agregado' => date('Y-m-d H:i:s'),
+                            'item_id' => $itemInfo['0']->id,
+                            'cantidad' => $cantItem,
+                            'vlr_item' => $precioLista,
+                            'vlr_impuesto' => $iptoItem['0']->tasa,
+                            'created_at' => date('Y-m-d H:i:s')                            
                         );
 
                         // guarda el detalle del pedido
@@ -236,6 +244,9 @@ class PedidosController extends Controller
                         $resp['estado'] = false;
                         $resp['mensaje'] = 'El item ya se encuentra en el carrito de compras con ' . $respDet['0']->cantidad . ' unidades.';
                     }
+                } else {
+                    $resp['estado'] = false;
+                    $resp['mensaje'] = 'No fue posible realizar el registro del pedido. Por favor, inténtelo nuevamente.';                    
                 }
      
             } else {
@@ -292,7 +303,7 @@ class PedidosController extends Controller
             $codBenf = $request['codBenf'];
 
             // Valida que se enviara el id del pedido a actualizar
-            if( !empty( $codBenf ) && !empty($userId) ) {
+            if( !empty($userId) ) {
 
                 // se obtiene el pedido del cliente
                 $items = Pedido::obtenerInfoPedido( $userId );
@@ -309,25 +320,25 @@ class PedidosController extends Controller
                     foreach( $items as $key => $val ) {
                         
                         //verifica si tiene el iva incluido para calcularlo
-                        if ( $val->vlriva == 1 ) {
-                            $items[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
-                            $items[$key]->tasaImp = ( $val->tasaiva/100 ) + 1;
-                            $items[$key]->vlrBase = number_format($val->precioventaunit / $items[$key]->tasaImp, 2, '.', '');
-                            $items[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
-                            $items[$key]->vlrIva = number_format($val->precioventaunit - $items[$key]->vlrBase, 2, '.', '');
+                        if ( $val->impto_incluido == 1 ) {
+                            $items[$key]->baseTtal = $val->vlr_item * $val->cantidad;
+                            $items[$key]->tasaImp = ( $val->vlr_impuesto/100 ) + 1;
+                            $items[$key]->vlrBase = number_format($val->vlr_item / $items[$key]->tasaImp, 2, '.', '');
+                            $items[$key]->vlrBaseTtal = number_format(($val->vlr_item / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                            $items[$key]->vlrIva = number_format($val->vlr_item - $items[$key]->vlrBase, 2, '.', '');
                         } else {
-                            $items[$key]->baseTtal = $val->precioventaunit * $val->cantidad;
-                            $items[$key]->tasaImp = ( $val->tasaiva/100 );
-                            $items[$key]->vlrIva = number_format($val->precioventaunit * $items[$key]->tasaImp, 2, '.', '');
-                            $items[$key]->vlrBase = number_format($val->precioventaunit, 2, '.', '');
-                            $items[$key]->vlrBaseTtal = number_format(($val->precioventaunit / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                            $items[$key]->baseTtal = $val->vlr_item * $val->cantidad;
+                            $items[$key]->tasaImp = ( $val->vlr_impuesto/100 ) + 1;                            
+                            $items[$key]->vlrBase = number_format($val->vlr_item, 2, '.', '');
+                            $items[$key]->vlrBaseTtal = number_format(($val->vlr_item / $items[$key]->tasaImp) * $val->cantidad, 2, '.', '');
+                            $items[$key]->vlrIv = number_format($val->vlr_item * $val->vlr_item, 2, '.', '');
                         }
     
                         $subTtal += $items[$key]->vlrBase * $val->cantidad;
                         $iva += $items[$key]->vlrIva * $val->cantidad;
     
                         //se obtienen las imagenes de cada item
-                        $img = Imagenesitem:: obtenerImagenItem($val->cod_item);
+                        $img = Imagenesitem::obtenerImagenItem($val->item_id);
                         if( !empty( $img['0']->id ) ) {
                             $items[$key]->imagen = $img['0']->url;
                         } else {
@@ -362,22 +373,22 @@ class PedidosController extends Controller
      * Contrasta la información obtendida de datax (unidades) vs las unidades 
      * pedidas por el cliente
      */
-    public function contrastarInfoCantidades($detPedido, $respDtx) {
+    public function contrastarInfoCantidades($detPedido, $cantidad) {
         $resp = array('estado' => true, 'data' => null);
 
         $compResult = [];
         foreach( $detPedido as $key => $val ) {
 
             // se actualiza la cantidad solicitada y la cantidad disponible
-            Pedidosdetalle::obtenerProductoEnDetalle($detPedido['0']->pedido_id, $val->cod_item, $val->cantidad, $respDtx[$val->cod_item]);
-
-            // verifica si la cantidad solicitada por el cliente es menor a la existente en datax
-            if( ($val->cantidad > $respDtx[$val->cod_item] || $val->cantidad == 0) && $val->estado == '1' ) {
+            Pedidosdetalle::obtenerProductoEnDetalle($detPedido['0']->pedido_id, $val->item_id, $val->cantidad, $cantidad[$val->item_id]);
+            
+            // verifica si la cantidad solicitada por el cliente es mayor a la existente
+            if( $val->cantidad > $cantidad[$val->item_id] ) {
                 $compResult[] = array(
-                    'cod_item' => $val->cod_item,
+                    'item_id' => $val->item_id,
                     'descripcion' => $val->descripcion,
                     'cantidad' => $val->cantidad,
-                    'disponible' => $respDtx[$val->cod_item]
+                    'disponible' => $cantidad[$val->item_id]
                 );
 
                 $resp['estado'] = false;
@@ -390,25 +401,23 @@ class PedidosController extends Controller
     }
 
     /**
-     * Obtiene las unidades disponibles de productos específicos desde datax
+     * Obtiene los saldos disponibles de un arreglo de productos
      */
-    public function obtenerUnidadesDisponiblesDatax( $codsItems ) {
-        $urlDatax = Configuraciondato::obtenerConfiguracion('urldatax');
-    
-        // obtiene el precio configurado para el cliente desde datax
-        $client = new Client();
-        $response = $client->request('GET', $urlDatax['0']->valor . 'get-available-units/' . json_encode( $codsItems ));
-
-        // verifica que la respuesta sea correcta
-        if($response->getStatusCode() == '200') {
-            $content = (string) $response->getBody()->getContents();
-            return json_decode($content);
-        } else {
+    public function obtenerCantidadesDisponibles( $idsItems ) {
+        $cantItems = [];
+        try {
+            // se recorren los ids de los items para obtener las cantidades de cada producto
+            foreach( $idsItems as $val ) {
+                // se obtiene la cantidad de un item
+                $cntItem = Saldo::obtenerSaldos( $val );
+                $cantItems[$val] = $cntItem['0']->saldoactual;
+            }
+            
+        } catch(Throwable $e) {
             return null;
         }
 
-        return null;
-
+        return $cantItems;
     }
 
     /**
@@ -432,16 +441,16 @@ class PedidosController extends Controller
                 if( !empty( $detPedido['0']->id ) ) {
 
                     // obtiene los codigos de los items del pedido
-                    $codsItems = [];                    
+                    $idsItems = [];                    
                     foreach( $detPedido as $key => $val ) {
-                        $codsItems[] = $val->cod_item;
+                        $idsItems[] = $val->item_id;
                     }
 
-                    // obtiene las cantidades disponibles de los items desde datax
-                    $respDtx = (array)$this->obtenerUnidadesDisponiblesDatax( $codsItems );
+                    // obtiene las cantidades disponibles de los items
+                    $cantidades = $this->obtenerCantidadesDisponibles($idsItems);
                     
                     // valida si existen unidades suficientes en el stock para realizar el pedido
-                    $compareRes = $this->contrastarInfoCantidades($detPedido, $respDtx);
+                    $compareRes = $this->contrastarInfoCantidades($detPedido, $cantidades);
 
                     if( !$compareRes['estado'] ) {
                         $resp['data'] = $compareRes['data'];
@@ -485,27 +494,27 @@ class PedidosController extends Controller
                 // valida si existe pedido para actualizar
                 if( !empty( $detPedido['0']->id ) ) {
 
-                    // obtiene los codigos de los items del pedido
-                    $codsItems = [];                    
+                    // obtiene los ids de los items del pedido
+                    $idsItems = [];                    
                     foreach( $detPedido as $key => $val ) {
-                        $codsItems[] = $val->cod_item;
+                        $idsItems[] = $val->id;
                     }
 
                     // obtiene las cantidades disponibles de los items desde datax
-                    $respDtx = (array)$this->obtenerUnidadesDisponiblesDatax( $codsItems );
+                    $cantidades = $this->obtenerCantidadesDisponibles($idsItems);
                     
                     // actualiza la cantidad pedida por el cliente con la cantidad disponible
                     $req = true;                    
                     foreach( $detPedido as $key => $val ) {
 
                         // elimina el registro ya que no existen unidades disponibles del producto
-                        if( $respDtx[$val->cod_item] < 1) {
-                            Pedidosdetalle::eliminarItemPedido( $val->cod_item, $val->pedido_id );
+                        if( $cantidades[$val->item_id] < 1) {
+                            Pedidosdetalle::eliminarItemPedido( $val->item_id, $val->pedido_id );
                         } 
 
                         // actualizo cuando la cantidad disponible sea menor a la cantidad pedida
-                        if( $respDtx[$val->cod_item] < $val->cantidad ) {
-                            $req = Pedidosdetalle::actualizarCantidadItem( $val->cod_item, $val->pedido_id, $respDtx[$val->cod_item] );
+                        if( $cantidades[$val->item_id] < $val->cantidad ) {
+                            $req = Pedidosdetalle::actualizarCantidadItem( $val->item_id, $val->pedido_id, $cantidades[$val->item_id] );
                             if( !$req ) {
                                 break;
                             }
@@ -519,6 +528,8 @@ class PedidosController extends Controller
                     } else {
                         $resp['mensaje'] = 'Se presentó un error. Por favor, inténtelo nuevamente.';
                     }
+                } else {
+                    $resp['mensaje'] = 'No fue posible obtener el pedido. Por favor, inténtelo nuevamente.';
                 }
                 
             } else {
@@ -554,17 +565,17 @@ class PedidosController extends Controller
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
         $userId = $request['userId'];
-        $pdWeb = $request['pdWeb'];
 
-        if( !empty($userId) && !empty($pdWeb) ) {
+        if( !empty($userId) ) {
 
             // actualiza el numero de pedido web obtenido de datax
-            if(Pedido::actualizarPedidoWeb( $userId, $pdWeb )) {
+            $pedidoId = Pedido::actualizarPedidoWeb( $userId );
+            if( $pedidoId ) {
                 // obtiene información básica del pedido
-                $infoPed = Pedidosdetalle::obtenerPedidoWeb($userId, $pdWeb);
+                $infoPed = Pedidosdetalle::obtenerPedidoWeb($userId, $pedidoId);
 
                 // se envia información del pedido
-                $this->enviarCorreoPedido($userId, $pdWeb);
+                $this->enviarCorreoPedido($userId, $pedidoId);
 
                 // se obtiene el total a pagar en la factura
                 $ttalPagar = 0;
@@ -648,6 +659,70 @@ class PedidosController extends Controller
         }
 
         return $resp;        
+    }
+
+    /**
+     * Obtiene la compra activa de un cliente
+     */
+    public function obtenerCantidadItems( Request $request ) {
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
+        $clienteId = $request['userId'];
+
+        try {
+
+            //obtiene el pedido activo para un cliente y su detalle
+            $infoPed = Pedido::obtenerPedidoActivoCliente( $clienteId );
+            
+            if( !empty( $infoPed['0']->id ) ) {
+                $resp['estado'] = true;
+                $resp['data'] = $infoPed;
+            } else {
+                $resp['mensaje'] = 'No fue posible obtener los registros';
+            }
+
+        }catch(Throwable $e) {
+            $resp = array( 'estado' => false, 'data' => null, 'mensaje' => 'Se presentó un error' );
+        }
+
+        return $resp;
+    }
+
+    /**
+     * Se obtienen los pedidos que se desean sincronizar a la aplicación contable
+     */
+    public function sincronizarpedido() {
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
+
+        try {
+
+            //obtiene los pedidos que se deben sincronizar
+            $infoPed = Pedido::obtenerPedidosSincronizar();
+            
+            if( !empty( $infoPed['0']->id ) ) {
+                $resp['estado'] = true;
+                $resp['data'] = $infoPed;
+            } else {
+                $resp['mensaje'] = 'No fue posible obtener los registros';
+            }
+
+        }catch(Throwable $e) {
+            $resp = array( 'estado' => false, 'data' => null, 'mensaje' => 'Se presentó un error' );
+        }
+
+        return $resp;
+    }
+
+    /**
+     * Se genera el número del pedido
+     */
+    public function obtenerNumeroPedido($items) {
+        $numPedido = '';
+
+        $arrFecha = explode(' ', $items['0']->fechapedido);
+
+        $numPedido = $items['0']->id . $items['0']->usuario_id . str_replace(':', '', $arrFecha['1']);  
+
+        return $numPedido;
     }
 
 }

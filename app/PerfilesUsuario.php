@@ -14,7 +14,7 @@ class PerfilesUsuario extends Model
 	    $id = PerfilesUsuario::insertGetId([
             'perfile_id' => $perfilId,
             'usuario_id' => $usuarioId,
-            'created' => $created
+            'created_at' => $created
           ]);	
           
         return $id;  

@@ -2,31 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Estadositem;
+use App\Estadopedido;
 use Illuminate\Http\Request;
+use GuzzleHttp\Client;
 
-class EstadosItemsController extends Controller
+class EstadopedidosController extends Controller
 {
     
     /**
-     * Retorna la información de todos los estados de los items registrados en la base de datos
+     * Retorna la información de todos los pedidos registrados en la base de datos
      */
-    public function obtenerEstadosItems()
-    {
+    public function obtenerEstadospedidos(){
 
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
         try {
 
-            // se obtienen los estados 
-            $estados = Estadositem::obtenerEstadosItems(); 
+            // se obtienen los pedidos
+            $estados = Estadopedido::obtenerEstadosPedido(); 
             
             // valida si se econtraron registros
             if( !empty( $estados ) ) {
                 $resp['estado'] = true;
                 $resp['data'] = $estados;
             } else {
-                $resp['mensaje'] = 'No se encontraron los estados para los items';
+                $resp['mensaje'] = 'No se encontraron los estados.';
             }
 
         } catch(Throwable $e) {
@@ -36,5 +36,4 @@ class EstadosItemsController extends Controller
         return $resp;
 
     }
-
 }

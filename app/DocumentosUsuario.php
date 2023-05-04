@@ -23,11 +23,11 @@ class DocumentosUsuario extends Model
      */
     public static function guardarDocumentosUsuario( $data ) {
 	    $id = DocumentosUsuario::insertGetId([
-        'documento_id' => $data['documento_id'],
         'usuario_id' => $data['usuario_id'],
+        'documento_id' => $data['documento_id'],        
         'url' => $data['url'],        
         'verificado' => 0,
-        'created' => $data['created']
+        'created_at' => $data['created_at']
       ]);	
       
       return $id;

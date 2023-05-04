@@ -12,8 +12,8 @@ class CategoriasGrupo extends Model
     public static function crearCategoriaGrupos( $catId, $grId, $date ) {
         $id = CategoriasGrupo::insertGetId([
             'categoria_id' => $catId,
-            'tipo_gru' => $grId,
-            'created' => $date
+            'grupo_id' => $grId,
+            'created_at' => $date
           ]);	 
           
         return $id;  
@@ -24,7 +24,8 @@ class CategoriasGrupo extends Model
      */
     public static function obtenerGruposCategoria( $id ){
 		$data = CategoriasGrupo::select()
-                ->where('categoria_id', $id)
+                ->join('grupos', 'grupos.id', '=', 'categorias_grupos.grupo_id')
+                ->where('categorias_grupos.categoria_id', $id)
                 ->get();
     	return $data;          
     }

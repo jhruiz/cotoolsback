@@ -9,8 +9,8 @@
 <body>
 
     <h4>
-        Para nosotros es un placer informarle que su usuario ha sido creado, ahora podrá disfrutar de todo nuestro stock. <br>
-        Bienvenido a la familia Cotools.
+        Para nosotros es un placer informarle que su usuario ha sido activado, ahora podrá disfrutar de todo nuestro stock. <br>
+        Bienvenido a la familia Torque Racing.
     </h4>
 
     <p>
