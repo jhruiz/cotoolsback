@@ -734,7 +734,7 @@ class PedidosController extends Controller
     }
 
     public function whnotifications( $id, Request $request ) {
-        echo "entra por aqui";
+        echo "entra por aqui " . $id;
     }
 
 }
