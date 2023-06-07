@@ -91,7 +91,7 @@ class Item extends Model
                 ->groupBy(  'items.id', 'listaprecios.precio1', 'listaprecios.ivaincp1', 
                             'listaprecios.precio2', 'listaprecios.ivaincp2', 'listaprecios.precio3', 
                             'listaprecios.ivaincp3', 'listaprecios.precio4', 'listaprecios.ivaincp4', 
-                            'saldos.saldoactual', 'items.referencia' )
+                            'saldos.saldoactual', 'items.referencia', 'items.descripcion' )
                 ->take($take)
                 ->get();
       return $data;
