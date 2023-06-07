@@ -158,3 +158,6 @@ Route::get('palabrasclave/obtener', 'App\Http\Controllers\PalabrasclavesControll
 Route::get('palabrasclave/guardar', 'App\Http\Controllers\PalabrasclavesController@crearPalabraClaveItem');
 Route::get('palabrasclave/eliminar', 'App\Http\Controllers\PalabrasclavesController@eliminarPalabrasClaveItem');
 
+// Rutas webhooks para mercadopago
+Route::post('webhooks', 'App\Http\Controllers\PedidosController@whmercadopago');
+

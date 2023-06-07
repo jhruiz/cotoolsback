@@ -725,5 +725,12 @@ class PedidosController extends Controller
 
         return $numPedido;
     }
+    
+    /**
+     * Llamado por webhook desde mercadopago
+     */
+    public function whmercadopago( Request $request ) {
+        echo "Hola";
+    }
 
 }
