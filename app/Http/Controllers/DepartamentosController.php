@@ -20,7 +20,7 @@ class DepartamentosController extends Controller
         try {
 
             // se obtienen los departamentos
-            $departamentos = Departamento::obtenerDepartamentos();
+            $departamentos = Departamento::obtenerDepartamentosPorPais();
             
             // valida si se econtraron registros
             if( !empty( $departamentos ) ) {

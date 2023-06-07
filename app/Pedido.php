@@ -142,7 +142,7 @@ class Pedido extends Model
     /**
      * Actualiza el número de pedido web
      */
-    public static function actualizarPedidoWeb( $usuarioId ) {
+    public static function actualizarPedidoWeb( $usuarioId, $mpId ) {
       // obtiene la informacion del pedido que se desea actualizar
       $pedido = Pedido::select()
                       ->where('pedidos.usuario_id', '=', $usuarioId)
@@ -152,6 +152,7 @@ class Pedido extends Model
       // valida que el pedido exista
       if( !empty( $pedido['0']->id ) ) {
           $pedido['0']->carrito = 0;
+          $pedido['0']->mercadopago = $mpId;
           $pedido['0']->save();
 
           return $pedido['0']->id;

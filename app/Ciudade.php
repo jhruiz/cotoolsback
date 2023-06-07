@@ -12,16 +12,27 @@ class Ciudade extends Model
      */
     public static function obtenerCiudades( ) {
 		$data = Ciudade::select()
+                ->orderBy('descripcion', 'ASC')
                 ->get();
+
     	return $data;      	
     }  
+
+    public static function obtenerCiudadesPorDpto( $dptoId ) {
+		$data = Ciudade::select()
+                ->where('departamento_id', $dptoId)
+                ->orderBy('descripcion', 'ASC')                
+                ->get();
+
+    	return $data;        
+    }
 
     /**
      * Se obtiene una ciudad por su descripcion
      */
     public static function obtenerCiudadPorDesc( $descripcion ) {
 		$data = Ciudade::select()
-                ->where('descripcion', $descripcion)
+                ->where('descripcion', $descripcion)                
                 ->get();
     	return $data;      	
     }    

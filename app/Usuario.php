@@ -32,7 +32,7 @@ class Usuario extends Model
                               'usuarios.email', 'usuarios.estado_id', 'tipodocumentos.descripcion as tipo_documento',
                               'perfiles.id as perfile_id','perfiles.descripcion as perfil', 'estados.id as estado_id',
                               'estados.descripcion as estado', 'tipopersonas.descripcion as tipo_persona', 'regimenes.descripcion as regimen',
-                              'ciudades.descripcion as ciudad')
+                              'ciudades.descripcion as ciudad', 'ciudades.id as ciudad_id', 'ciudades.departamento_id as departamento')
                 ->leftjoin('perfiles_usuarios', 'perfiles_usuarios.usuario_id', '=', 'usuarios.id')       
                 ->leftjoin('perfiles', 'perfiles.id', '=', 'perfiles_usuarios.perfile_id')   
                 ->leftjoin('estados', 'estados.id', '=', 'usuarios.estado_id')      
@@ -131,6 +131,30 @@ class Usuario extends Model
       
       return false;
     }
+
+    /**
+     * Actualizar la información del usaurio
+     */
+    public static function actualizarInfoUsuario( $id, $email, $ciudad, $direccion, $celular, $telefono ) {
+
+      // obtiene la informacion del usuario
+      $usuario = Usuario::select()
+                  ->where('usuarios.id', $id)
+                  ->get();
+
+      if(!empty($usuario['0']->id)) {
+        $usuario['0']->email = $email;
+        $usuario['0']->ciudade_id = $ciudad;
+        $usuario['0']->direccion = $direccion;
+        $usuario['0']->telefono = $telefono;
+        $usuario['0']->celular = $celular;
+        $usuario['0']->save();
+
+        return true;
+      }
+      
+      return false;
+    }    
 
     /**
      * Obtiene la información del usuario por su id

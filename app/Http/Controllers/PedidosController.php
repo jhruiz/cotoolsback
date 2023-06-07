@@ -190,12 +190,12 @@ class PedidosController extends Controller
                         'fechapedido' => date('Y-m-d H:i:s'),
                         'usuario_id' => $usuarioId,
                         'vendedor_id' => $userInfo['0']->usuario_id,
-                        'detalle' => 'Venta cotools web',
+                        'detalle' => 'Venta Miggo web',
                         'tipopago_id' => '2',
                         'diascredito' => '30',
                         'listaprecio_id' => $userInfo['0']->listaprecio,
                         'sincronizado' => '0',
-                        'estadopedido_id' => '1',
+                        'estadopedido_id' => '4',
                         'created_at' => date('Y-m-d H:i:s'),
                         'carrito' => '1'
                     );
@@ -429,7 +429,7 @@ class PedidosController extends Controller
 
         try {
 
-            $userId = $request['userId'];
+            $userId = $request['userId'];            
 
             // Valida que se enviara el id del cliente
             if( !empty( $userId ) ) {
@@ -565,11 +565,12 @@ class PedidosController extends Controller
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
         $userId = $request['userId'];
+        $mpId = $request['mpId'];
 
         if( !empty($userId) ) {
 
             // actualiza el numero de pedido web obtenido de datax
-            $pedidoId = Pedido::actualizarPedidoWeb( $userId );
+            $pedidoId = Pedido::actualizarPedidoWeb( $userId, $mpId );
             if( $pedidoId ) {
                 // obtiene información básica del pedido
                 $infoPed = Pedidosdetalle::obtenerPedidoWeb($userId, $pedidoId);

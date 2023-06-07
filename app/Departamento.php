@@ -17,6 +17,17 @@ class Departamento extends Model
   }
 
   /**
+   * Se obtienen todos los departamentos registrados en la base de datos por pais
+   */
+  public static function obtenerDepartamentosPorPais() {
+    $data = Departamento::select()
+            ->where('paise_id', '42')
+            ->orderBy('descripcion', 'ASC')
+            ->get();
+    return $data;  
+  }
+
+  /**
    * Se crea un departamento
    */
   public static function crearDepartamento( $data ) {

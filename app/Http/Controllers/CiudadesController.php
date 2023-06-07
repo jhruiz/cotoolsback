@@ -12,15 +12,15 @@ class CiudadesController extends Controller
     /**
      * Retorna la información de todas las ciudades registradas en la base de datos
      */
-    public function obtenerCiudades()
+    public function obtenerCiudades(Request $request)
     {
+
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
         try {
-
             // se obtienen las ciudades
-            $ciudades = Ciudade::obtenerCiudades();
-            
+            $ciudades = !isset($request['dptoId']) ? Ciudade::obtenerCiudades() : Ciudade::obtenerCiudadesPorDpto( $request['dptoId'] );
+
             // valida si se econtraron registros
             if( !empty( $ciudades ) ) {
                 $resp['estado'] = true;

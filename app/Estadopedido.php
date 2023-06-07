@@ -11,6 +11,7 @@ class Estadopedido extends Model
      */
     public static function obtenerEstadosPedido( ) {
 		$data = Estadopedido::select()
+                    ->orderBy('orden', 'ASC') 
                     ->get();
     	return $data;     	
     }

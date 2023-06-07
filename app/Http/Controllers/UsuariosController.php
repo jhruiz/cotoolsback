@@ -406,7 +406,7 @@ class UsuariosController extends Controller
         $usuarioId = $request['id'];
         $estadoId = $request['estado'];
         $perfiles = $request['perfiles'];
-        $email = 'jaiber.ruiz@hotmail.com'; //$request['email'];     
+        $email = $request['email'];     
 
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
@@ -454,6 +454,46 @@ class UsuariosController extends Controller
         }
 
         return $resp;        
+    }
+
+    /**
+     * Actualiza usuarios desde la página web
+     */
+    public function selfUpdateUser(Request $request) {
+
+        $usuarioId = $request['user'];
+        $email = $request['email'];
+        $ciudad = $request['ciudad'];
+        $direccion = $request['direccion'];     
+        $celular = $request['celular'];     
+        $telefono = $request['telefono'];     
+
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
+        
+        try {
+
+            // Verifica que se ingresara el id del usuario
+            if( !empty( $usuarioId ) && !empty($email) && !empty($ciudad) && !empty($direccion) && !empty($celular) ){
+                // Actualizar estado del usuario
+                $rp = Usuario::actualizarInfoUsuario( $usuarioId, $email, $ciudad, $direccion, $celular, $telefono );
+
+                // valida si fue posible realizar la actualización del documento para el usuario
+                if( $rp ) {
+                    $resp['estado'] = true;
+                } else {
+                    $resp['mensaje'] = 'El usuario seleccionado no fue encontrado en los registros';
+                }     
+
+            } else {
+                $resp['mensaje'] = 'Debe ingresar un usuario y un estado';
+            }
+
+        } catch(Throwable $e) {
+            return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
+        }
+
+        return $resp;             
+        
     }
 
     /**

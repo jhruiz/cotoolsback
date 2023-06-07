@@ -7,6 +7,7 @@ Route::get('enviarcorreopedido/{userId}/{pdweb}', 'App\Http\Controllers\PedidosC
 // Rutas para usuarios
 Route::get('usuarios/obtener', 'App\Http\Controllers\UsuariosController@obtenerUsuarios'); //get-users
 Route::get('usuario/obtener', 'App\Http\Controllers\UsuariosController@obtenerUsuario'); //get-user
+Route::get('usuario/autoactualiza', 'App\Http\Controllers\UsuariosController@selfUpdateUser'); //get-user
 Route::get('usuarios/crearsinc', 'App\Http\Controllers\UsuariosController@crearUsuarioSinc'); //create-user
 Route::get('usuarios/crear', 'App\Http\Controllers\UsuariosController@crearUsuario'); //create-user
 Route::get('usuario/actualizar', 'App\Http\Controllers\UsuariosController@actualizarUsuario'); //update-user
@@ -80,7 +81,7 @@ Route::get('estadopedidos/obtener', 'App\Http\Controllers\EstadopedidosControlle
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Rutas para las ciudades
 Route::get('ciudades/crear', 'App\Http\Controllers\CiudadesController@crearCiudad');
-Route::get('ciudades/obtener', 'App\Http\Controllers\CiudadesController@obtenerCiudades');
+Route::get('ciudades/obtener/{dptoId?}', 'App\Http\Controllers\CiudadesController@obtenerCiudades');
 Route::get('ciudades/actualizar', 'App\Http\Controllers\CiudadesController@actualizarCiudad');
 
 // Rutas para los departamentos

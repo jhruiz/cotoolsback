@@ -16,7 +16,8 @@ class Pedidosdetalle extends Model
                                       'pedidosdetalles.cantidad', 'pedidosdetalles.vlr_item', 'pedidosdetalles.vlr_impuesto', 
                                       'usuarios.id as usuario_id', 'usuarios.primer_nombre', 'usuarios.segundo_nombre',
                                       'usuarios.primer_apellido', 'usuarios.segundo_apellido', 'usuarios.nit',
-                                      'estadopedidos.id as estadoId', 'estadopedidos.descripcion as descEstado')
+                                      'estadopedidos.id as estadoId', 'estadopedidos.descripcion as descEstado',
+                                      'estadopedidos.orden as ordenpedido')
                                       
                 ->join('pedidos', 'pedidos.id', '=', 'pedidosdetalles.pedido_id')
                 ->join('usuarios', 'usuarios.id', '=', 'pedidos.usuario_id')
