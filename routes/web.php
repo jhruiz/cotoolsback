@@ -160,4 +160,5 @@ Route::get('palabrasclave/eliminar', 'App\Http\Controllers\PalabrasclavesControl
 
 // Rutas webhooks para mercadopago
 Route::post('webhooks', 'App\Http\Controllers\PedidosController@whmercadopago');
+Route::post('notifications/{id}', 'App\Http\Controllers\PedidosController@whnotifications');
 

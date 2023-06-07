@@ -733,4 +733,8 @@ class PedidosController extends Controller
         echo "Hola";
     }
 
+    public function whnotifications( $id, Request $request ) {
+        echo "entra por aqui";
+    }
+
 }
