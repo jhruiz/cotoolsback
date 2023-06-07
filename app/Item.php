@@ -92,7 +92,9 @@ class Item extends Model
                             'listaprecios.precio2', 'listaprecios.ivaincp2', 'listaprecios.precio3', 
                             'listaprecios.ivaincp3', 'listaprecios.precio4', 'listaprecios.ivaincp4', 
                             'saldos.saldoactual', 'items.referencia', 'items.descripcion', 
-                            'items.desc_extensa' )
+                            'items.desc_extensa', 'impuestos.id', 'impuestos.descripcion',
+                            'impuestos.tasa', 'grupos.descripcion', 'lineas.descripcion',
+                            'items.codigo', 'items.unidad_factor')
                 ->take($take)
                 ->get();
       return $data;
