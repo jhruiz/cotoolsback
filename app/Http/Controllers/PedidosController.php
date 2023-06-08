@@ -725,6 +725,39 @@ class PedidosController extends Controller
 
         return $numPedido;
     }
+
+    /**
+     * Reactivar pedido por fallos en el pago
+     */
+    public function reactivarPedido( Request $request ) {
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
+
+        try {
+
+            $idPreference = $request['idPreference'];
+
+            // Valida que se enviara el id del pedido a actualizar
+            if( !empty( $idPreference ) ) {
+
+                $rp = Pedido::reactivarPedido( $idPreference );
+
+                // valida si fue posible realizar la actualización del estado pago
+                if( $rp ) {
+                    $resp['estado'] = true;
+                } else {
+                    $resp['mensaje'] = 'No fue posible encontrar el pedido.';
+                }
+                
+            } else {
+                $resp['mensaje'] = 'No fue posible encontrar el pedido.';
+            }
+
+        } catch(Throwable $e) {
+            return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
+        }
+
+        return $resp;
+    }
     
     /**
      * Llamado por webhook desde mercadopago

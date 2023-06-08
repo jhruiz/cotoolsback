@@ -51,6 +51,7 @@ Route::get('pedido/actualizarestado', 'App\Http\Controllers\PedidosController@ac
 Route::get('pedido/actualizarguia', 'App\Http\Controllers\PedidosController@actualizarUrlGuia'); // update-url-guide
 Route::get('pedido/sincronizarpedido', 'App\Http\Controllers\PedidosController@sincronizarpedido'); // update-url-guide
 Route::get('pedido/detallepedido', 'App\Http\Controllers\PedidosController@obtenerDetallePedido'); // update-url-guide
+Route::post('pedido/enablepurchase', 'App\Http\Controllers\PedidosController@reactivarPedido'); 
 
 // Rutas para detalle de los pedidos
 Route::get('pedidodetalle/obtenerdetalle', 'App\Http\Controllers\PedidosdetallesController@obtenerPedidoDetalles'); // get-order-details

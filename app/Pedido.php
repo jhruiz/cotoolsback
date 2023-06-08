@@ -159,7 +159,27 @@ class Pedido extends Model
       }
 
       return false;        
-  }    
+    }  
+    
+    /**
+     * Cambia el estado del pedido a activo nuevamente 
+     */
+    public static function reactivarPedido( $idPreference ) {
+      // obtiene la información del pedido que se desea reactivar
+      $pedido = Pedido::select()
+                      ->where('pedidos.mercadopago', '=', $idPreference)                    
+                      ->get();
+
+      // valida que el pedido exista
+      if( !empty( $pedido['0']->id ) ) {
+        $pedido['0']->carrito = 1;
+        $pedido['0']->save();
+
+        return $pedido['0']->id;
+      }
+
+      return false;
+    }
 
     /**
      * Obtiene un pedido específico de un cliente
