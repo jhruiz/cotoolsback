@@ -854,15 +854,15 @@ class PedidosController extends Controller
 
                 if ( $content->status == 'approved' ) {
 
-                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '5' );
+                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '5', $content->status );
 
-                } else if( $content->status == 'pending' ) {
+                } else if( $content->status == 'pending' || $content->status == 'in_process' || $content->status == 'authorized' ) {
 
-                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '4' );
+                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '4', $content->status );
 
-                } else if ( $content->status == 'rejected' ) {
+                } else if ( $content->status == 'rejected' || $content->status == 'cancelled' || $content->status == 'refunded' || $content->status == 'charged_back' ) {
                     
-                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '6' );
+                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '6', $content->status );
                 
                 }
             }
