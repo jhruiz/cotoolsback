@@ -268,4 +268,25 @@ class Pedido extends Model
                       ->get();  
       return $data;    
     }
+
+    /**
+     * Actualiza el estado del pedido
+     */
+    public static function actualizarEstadoMercadoPago( $pedidoId, $estadoPedId ) {
+      // obtiene la informacion del pedido que se desea actualizar
+      $pedido = Pedido::select()
+                      ->where('pedidos.id', '=', $pedidoId)
+                      ->get();
+      
+      // valida que el pedido exista
+      if( !empty( $pedido['0']->id ) ) {
+          $pedido['0']->estadopedido_id = $estadoPedId;
+          $pedido['0']->fecha_sincronizado = date("Y-m-d H:i:s");
+          $pedido['0']->save();
+
+          return true;
+      }
+
+      return false;        
+    }    
 }
