@@ -204,6 +204,27 @@ class Pedido extends Model
     }
 
     /**
+     * Aprueba el pago y el pedido
+     */
+    public static function aprobadoPedido( $idPreference ) {
+      // obtiene la información del pedido que se desea aprobar
+      $pedido = Pedido::select()
+                      ->where('pedidos.mercadopago', '=', $idPreference)                    
+                      ->get();
+
+      // valida que el pedido exista
+      if( !empty( $pedido['0']->id ) ) {
+        $pedido['0']->carrito = 0;
+        $pedido['0']->estadopedido_id = 5;
+        $pedido['0']->save();
+
+        return $pedido['0']->id;
+      }
+
+      return false;       
+    }
+
+    /**
      * Obtiene un pedido específico de un cliente
      */
     public static function obtenerPedidoWebCliente($userId, $pedidoId) {

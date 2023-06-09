@@ -53,6 +53,7 @@ Route::get('pedido/sincronizarpedido', 'App\Http\Controllers\PedidosController@s
 Route::get('pedido/detallepedido', 'App\Http\Controllers\PedidosController@obtenerDetallePedido'); // update-url-guide
 Route::post('pedido/declinepurchase', 'App\Http\Controllers\PedidosController@rechazarPedido'); 
 Route::post('pedido/pendingpurchase', 'App\Http\Controllers\PedidosController@pendientePedido'); 
+Route::post('pedido/approvepurchase', 'App\Http\Controllers\PedidosController@aprobadoPedido'); 
 
 // Rutas para detalle de los pedidos
 Route::get('pedidodetalle/obtenerdetalle', 'App\Http\Controllers\PedidosdetallesController@obtenerPedidoDetalles'); // get-order-details

@@ -791,6 +791,39 @@ class PedidosController extends Controller
 
         return $resp;
     }
+
+    /**
+     * Se aprueba el pago y el pedido
+     */
+    public function aprobadoPedido( Request $request ) {
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
+
+        try {
+
+            $idPreference = $request['idPreference'];
+
+            // Valida que se enviara el id del pedido a actualizar
+            if( !empty( $idPreference ) ) {
+
+                $rp = Pedido::aprobadoPedido( $idPreference );
+
+                // valida si fue posible realizar la actualización del estado pago
+                if( $rp ) {
+                    $resp['estado'] = true;
+                } else {
+                    $resp['mensaje'] = 'No fue posible encontrar el pedido.';
+                }
+                
+            } else {
+                $resp['mensaje'] = 'No fue posible encontrar el pedido.';
+            }
+
+        } catch(Throwable $e) {
+            return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
+        }
+
+        return $resp;
+    }
     
     /**
      * Llamado por webhook desde mercadopago
@@ -821,15 +854,15 @@ class PedidosController extends Controller
 
                 if ( $content->status == 'approved' ) {
 
-                    return 'aprobado';
+                    
 
                 } else if( $content->status == 'pending' ) {
 
-                    return 'pendiente';
+                    
 
                 } else if ( $content->status == 'rejected' ) {
                     
-                    return 'rechazado';
+                    
                 
                 }
 
