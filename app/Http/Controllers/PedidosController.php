@@ -829,44 +829,46 @@ class PedidosController extends Controller
      * Llamado por webhook desde mercadopago
      */
     public function whmercadopago( Request $request ) {
-
-        $paymentId = $request->get('payment_id');
-
-        $client = new Client();
-
-        $url = 'https://api.mercadopago.com/v1/payments/' . $paymentId;
-        $token = 'APP_USR-4653158926500716-050220-a3db41d66b87cee0a4bf985ecd850f14-1363105107';
-
-        $response = $client->request(
-            'GET', $url, [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $token
-                    ]
-                ]
-        );
         
-        if($response->getStatusCode() == '200') {
-            $content = json_decode((string) $response->getBody()->getContents());
+        Pedido::actualizarRequest($request->all());
+        
+        // $paymentId = $request->get('payment_id');
 
-            if(!empty($content)) {
-                $idPedido = array_slice(explode('/', $content->notification_url), -1)[0]; 
-                $statusPay = $content->status;
+        // $client = new Client();
 
-                if ( $content->status == 'approved' ) {
+        // $url = 'https://api.mercadopago.com/v1/payments/' . $paymentId;
+        // $token = 'APP_USR-4653158926500716-050220-a3db41d66b87cee0a4bf985ecd850f14-1363105107';
 
-                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '5', $content->status );
+        // $response = $client->request(
+        //     'GET', $url, [
+        //         'headers' => [
+        //             'Authorization' => 'Bearer ' . $token
+        //             ]
+        //         ]
+        // );
 
-                } else if( $content->status == 'pending' || $content->status == 'in_process' || $content->status == 'authorized' ) {
+        // if($response->getStatusCode() == '200') {
+        //     $content = json_decode((string) $response->getBody()->getContents());
 
-                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '4', $content->status );
+        //     if(!empty($content)) {
+        //         $idPedido = array_slice(explode('/', $content->notification_url), -1)[0]; 
+        //         $statusPay = $content->status;
 
-                } else if ( $content->status == 'rejected' || $content->status == 'cancelled' || $content->status == 'refunded' || $content->status == 'charged_back' ) {
+        //         if ( $content->status == 'approved' ) {
+
+        //             $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '5', $content->status );
+
+        //         } else if( $content->status == 'pending' || $content->status == 'in_process' || $content->status == 'authorized' ) {
+
+        //             $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '4', $content->status );
+
+        //         } else if ( $content->status == 'rejected' || $content->status == 'cancelled' || $content->status == 'refunded' || $content->status == 'charged_back' ) {
                     
-                    $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '6', $content->status );
+        //             $rp = Pedido::actualizarEstadoMercadoPago( $idPedido, '6', $content->status );
                 
-                }
-            }
-        }
+        //         }
+        //     }
+        // }
     }
 
     public function whnotifications( $id, Request $request ) {

@@ -290,4 +290,24 @@ class Pedido extends Model
 
       return false;        
     }    
+
+    public static function actualizarRequest( $req ) {
+
+      // obtiene la informacion del pedido que se desea actualizar
+      $pedido = Pedido::select()
+                      ->where('pedidos.id', '=', 27)
+                      ->get();
+      
+      // valida que el pedido exista
+      if( !empty( $pedido['0']->id ) ) {
+          $pedido['0']->fecha_sincronizado = date("Y-m-d H:i:s");
+          $pedido['0']->request = json_encode($req);
+          $pedido['0']->save();
+
+          return true;
+      }
+
+      return false; 
+
+    }
 }
