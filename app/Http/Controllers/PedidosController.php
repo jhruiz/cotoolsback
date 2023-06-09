@@ -797,7 +797,7 @@ class PedidosController extends Controller
      */
     public function whmercadopago( Request $request ) {
 
-        $paymentId = $request->get('payment_id');
+        $paymentId = '59094417797'; //$request->get('payment_id');
 
         $client = new Client();
 
@@ -819,15 +819,23 @@ class PedidosController extends Controller
                 $idPedido = array_slice(explode('/', $content->notification_url), -1)[0]; 
                 $statusPay = $content->status;
 
-                // if($content->status=='approved') {
+                if ( $content->status == 'approved' ) {
 
-                // }else{
+                    return 'aprobado';
 
-                // }
+                } else if( $content->status == 'pending' ) {
 
-                // echo "<pre>";
-                // print_r($statusPay);
-                // echo "</pre>";  
+                    return 'pendiente';
+
+                } else if ( $content->status == 'rejected' ) {
+                    
+                    return 'rechazado';
+                
+                }
+
+                echo "<pre>";
+                print_r($statusPay);
+                echo "</pre>";  
             }
         }
     }
