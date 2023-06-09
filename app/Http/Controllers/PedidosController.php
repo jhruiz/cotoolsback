@@ -727,9 +727,9 @@ class PedidosController extends Controller
     }
 
     /**
-     * Reactivar pedido por fallos en el pago
+     * Rechazar pedido por fallos en el pago
      */
-    public function reactivarPedido( Request $request ) {
+    public function rechazarPedido( Request $request ) {
         $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
 
         try {
@@ -739,7 +739,40 @@ class PedidosController extends Controller
             // Valida que se enviara el id del pedido a actualizar
             if( !empty( $idPreference ) ) {
 
-                $rp = Pedido::reactivarPedido( $idPreference );
+                $rp = Pedido::rechazarPedido( $idPreference );
+
+                // valida si fue posible realizar la actualización del estado pago
+                if( $rp ) {
+                    $resp['estado'] = true;
+                } else {
+                    $resp['mensaje'] = 'No fue posible encontrar el pedido.';
+                }
+                
+            } else {
+                $resp['mensaje'] = 'No fue posible encontrar el pedido.';
+            }
+
+        } catch(Throwable $e) {
+            return array( 'estado' => false, 'data' => null, 'mensaje' => $e );
+        }
+
+        return $resp;
+    }
+
+    /**
+     * Pasa a estado pendiente de pago un pedido
+     */
+    public function pendientePedido( Request $request ) {
+        $resp = array( 'estado' => false, 'data' => null, 'mensaje' => '' );
+
+        try {
+
+            $idPreference = $request['idPreference'];
+
+            // Valida que se enviara el id del pedido a actualizar
+            if( !empty( $idPreference ) ) {
+
+                $rp = Pedido::pendientePedido( $idPreference );
 
                 // valida si fue posible realizar la actualización del estado pago
                 if( $rp ) {

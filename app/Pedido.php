@@ -162,9 +162,30 @@ class Pedido extends Model
     }  
     
     /**
-     * Cambia el estado del pedido a activo nuevamente 
+     * Cambia el estado del pedido rechazado por pago
      */
-    public static function reactivarPedido( $idPreference ) {
+    public static function rechazarPedido( $idPreference ) {
+      // obtiene la información del pedido que se desea inactivar y rechazar por pago
+      $pedido = Pedido::select()
+                      ->where('pedidos.mercadopago', '=', $idPreference)                    
+                      ->get();
+
+      // valida que el pedido exista
+      if( !empty( $pedido['0']->id ) ) {
+        $pedido['0']->carrito = 0;
+        $pedido['0']->estadopedido_id = 6;
+        $pedido['0']->save();
+
+        return $pedido['0']->id;
+      }
+
+      return false;
+    }
+
+    /**
+     * Cambia el estado del pedido a pendiente por validacion de pago o rechaso del mismo
+     */
+    public static function pendientePedido( $idPreference ) {
       // obtiene la información del pedido que se desea reactivar
       $pedido = Pedido::select()
                       ->where('pedidos.mercadopago', '=', $idPreference)                    
@@ -172,13 +193,14 @@ class Pedido extends Model
 
       // valida que el pedido exista
       if( !empty( $pedido['0']->id ) ) {
-        $pedido['0']->carrito = 1;
+        $pedido['0']->carrito = 0;
+        $pedido['0']->estadopedido_id = 4;
         $pedido['0']->save();
 
         return $pedido['0']->id;
       }
 
-      return false;
+      return false;      
     }
 
     /**
