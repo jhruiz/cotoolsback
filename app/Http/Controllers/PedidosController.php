@@ -763,17 +763,40 @@ class PedidosController extends Controller
      * Llamado por webhook desde mercadopago
      */
     public function whmercadopago( Request $request ) {
-    //     curl -X GET \
-    //   'https://api.mercadopago.com/v1/payments/{id}' \
-    //   -H 'Authorization: Bearer APP_USR-4653158926500716-050220-a3db41d66b87cee0a4bf985ecd850f14-1363105107'
+
+        $paymentId = $request->get('payment_id');
 
         $client = new Client();
 
-        $url = 'https://api.mercadopago.com/v1/payments/59133895106';
+        $url = 'https://api.mercadopago.com/v1/payments/' . $paymentId;
+        $token = 'APP_USR-4653158926500716-050220-a3db41d66b87cee0a4bf985ecd850f14-1363105107';
 
-        $response = $client->request('GET', $url, ['headers' => ['Authorization' => 'Bearer APP_USR-4653158926500716-050220-a3db41d66b87cee0a4bf985ecd850f14-1363105107']]);
+        $response = $client->request(
+            'GET', $url, [
+                'headers' => [
+                    'Authorization' => 'Bearer '. $token
+                    ]
+                ]
+        );
+        
+        if($response->getStatusCode() == '200') {
+            $content = json_decode((string) $response->getBody()->getContents());
 
-        print_r($response);
+            if(!empty($content)) {
+                $idPedido = array_slice(explode('/', $content->notification_url), -1)[0]; 
+                $statusPay = $content->status;
+
+                // if($content->status=='approved') {
+
+                // }else{
+
+                // }
+
+                // echo "<pre>";
+                // print_r($statusPay);
+                // echo "</pre>";  
+            }
+        }
     }
 
     public function whnotifications( $id, Request $request ) {
