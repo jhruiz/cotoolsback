@@ -830,7 +830,7 @@ class PedidosController extends Controller
      */
     public function whmercadopago( Request $request ) {
 
-        $paymentId = '59094417797'; //$request->get('payment_id');
+        $paymentId = $request->get('payment_id');
 
         $client = new Client();
 
