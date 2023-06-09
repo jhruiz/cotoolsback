@@ -840,7 +840,7 @@ class PedidosController extends Controller
         $response = $client->request(
             'GET', $url, [
                 'headers' => [
-                    'Authorization' => 'Bearer '. $token
+                    'Authorization' => 'Bearer ' . $token
                     ]
                 ]
         );
