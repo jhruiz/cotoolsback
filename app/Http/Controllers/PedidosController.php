@@ -829,7 +829,7 @@ class PedidosController extends Controller
      * Llamado por webhook desde mercadopago
      */
     public function whmercadopago( Request $request ) {
-        
+
         Pedido::actualizarRequest($request->all());
         
         // $paymentId = $request->get('payment_id');
@@ -872,7 +872,7 @@ class PedidosController extends Controller
     }
 
     public function whnotifications( $id, Request $request ) {
-        echo "entra por aqui " . $id;
+        Pedido::actualizarRequest($request->all());
     }
 
 }
