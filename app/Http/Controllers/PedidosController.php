@@ -250,7 +250,7 @@ class PedidosController extends Controller
                 }
      
             } else {
-                $resp['mensaje'] = 'Debe ingresar un usuario y un producto.';
+                $resp['mensaje'] = 'Debe ingresar una cantidad válida del producto.';
             }
 
         } catch(Throwable $e) {
